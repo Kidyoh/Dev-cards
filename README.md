@@ -19,6 +19,27 @@ number on the card is computed from real public GitHub data. There's no sign-in:
 - **Leaderboards**: by country or by stack. Built without a database: GitHub user search finds the most-followed
   developers for a `location:` / `language:`, the app scores them live, and caches the result for 6 hours.
 
+## Interactions
+
+- **Pack opening:** every card page starts with a sealed foil pack that glows in the rarity's color. Tap it
+  (or wait) and it shakes, the top tears off, the screen flashes, light rays spin up, and the card spins out
+  in a confetti burst while its numbers count up. "Rip another" replays it.
+- **3D card:** a spring-driven tilt follows the pointer. The avatar, rating, name and stats sit on separate
+  depth layers that lift toward you, with a glare that tracks the pointer. Foil changes with rarity: a sheen on
+  bronze and silver, sparkle foil and a shine sweep on gold, and full prismatic holo on Legacy, under a
+  graded-slab glass layer. Cards sway when idle, and clicking or pressing Enter flips them to the moves.
+- **Compare:** the cards fly in and collide, "VS" slams in with a burst, the stat bars race one by one,
+  a two-player radar draws itself in, and the winner gets a glow.
+- **Leaderboards:** the top three rise onto a podium, with rays behind #1. Rows slide in, and hovering a row
+  shows a card preview that follows the pointer.
+- **Home:** words blur into view, the card fan spreads on hover, two rows of cards scroll endlessly,
+  the search box has a typewriter placeholder and a spinning border, and panels light up where the pointer is.
+- **Binder:** hovering a card blurs the rest, and adding or removing cards animates.
+- **Reduced motion:** with the OS setting on, the pack is skipped and transform animations turn instant.
+
+Animation uses [`motion`](https://motion.dev). Everything else is CSS: 3D transforms, conic and repeating
+gradients, and blend modes.
+
 ## Stats
 
 | Stat | Name | What feeds it |
@@ -49,7 +70,7 @@ deterministic, made-up stats. Never set this in production.
 
 ## Stack
 
-Next.js 15 (App Router) and TypeScript, with plain CSS. There's no database. Images are rendered with `next/og`,
+Next.js 15 (App Router) and TypeScript, with plain CSS and `motion` for animation. There's no database. Images are rendered with `next/og`,
 and caching uses `unstable_cache`. Deploys to Vercel as-is: set `GITHUB_TOKEN` and `NEXT_PUBLIC_SITE_URL`.
 
 ## Layout

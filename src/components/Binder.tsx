@@ -1,5 +1,6 @@
 "use client";
 
+import { AnimatePresence, motion } from "motion/react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { readBinder, removeFromBinder } from "@/lib/binder";
@@ -51,15 +52,24 @@ export function Binder() {
           <Link className="btn" href={`/compare?a=${pick[0]}&b=${pick[1]}`}>Compare {pick[0]} vs {pick[1]}</Link>
         )}
       </div>
-      <div className="grid-cards">
-        {sorted.map((l) => {
+      <div className="grid-cards focus-grid">
+        <AnimatePresence>
+        {sorted.map((l, i) => {
           const c = cards[l];
           return (
-            <div key={l} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
+            <motion.div
+              key={l}
+              layout
+              className={`bcard ${pick.includes(l) ? "picked" : ""}`}
+              initial={{ opacity: 0, y: 40, rotate: -6, scale: 0.9 }}
+              animate={{ opacity: 1, y: 0, rotate: 0, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.6, rotate: 12, transition: { duration: 0.3 } }}
+              transition={{ type: "spring", stiffness: 140, damping: 16, delay: i * 0.05 }}
+            >
               {c === undefined && <div className="muted" style={{ height: 300 }}>Loading @{l}…</div>}
               {c === "error" && <div className="muted" style={{ height: 300 }}>Couldn&apos;t load @{l}</div>}
               {typeof c === "object" && (
-                <Link href={`/u/${c.login}`}><DevCard card={c} scale={0.7} flippable={false} /></Link>
+                <Link href={`/u/${c.login}`}><DevCard card={c} scale={0.7} flippable={false} slab={false} /></Link>
               )}
               <div style={{ display: "flex", gap: 6 }}>
                 <button className={`btn ${pick.includes(l) ? "" : "ghost"}`} style={{ padding: "6px 10px" }} onClick={() => toggle(l)}>
@@ -70,9 +80,10 @@ export function Binder() {
                   Remove
                 </button>
               </div>
-            </div>
+            </motion.div>
           );
         })}
+        </AnimatePresence>
       </div>
     </>
   );

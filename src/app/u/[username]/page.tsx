@@ -1,13 +1,16 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { CardActions } from "@/components/CardActions";
-import { DevCard } from "@/components/DevCard";
 import { ErrorBox } from "@/components/ErrorBox";
+import { Glow } from "@/components/fx/Glow";
+import { Reveal } from "@/components/fx/Reveal";
+import { PackReveal } from "@/components/PackReveal";
+import { StatBars, StatRadar } from "@/components/StatPanel";
 import { getCard } from "@/lib/cards";
 import { GitHubError } from "@/lib/github";
 import { siteUrl } from "@/lib/site";
 import { RARITY } from "@/lib/theme";
-import { STAT_HINTS, STAT_LABELS, type CardData, type StatKey } from "@/lib/types";
+import type { CardData } from "@/lib/types";
 
 type Props = { params: Promise<{ username: string }> };
 
@@ -41,39 +44,35 @@ export default async function CardPage({ params }: Props) {
   if (!card) return <ErrorBox error={error} />;
 
   const url = `${siteUrl()}/u/${card.login}`;
-  const keys = Object.keys(STAT_LABELS) as StatKey[];
 
   return (
     <div className="card-page">
-      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10 }}>
-        <DevCard card={card} />
-        <span className="muted" style={{ fontSize: 12 }}>Click the card to flip it and see the moves</span>
+      <div className="card-col">
+        <PackReveal card={card} />
+        <span className="muted" style={{ fontSize: 12 }}>Drag across the card to tilt it · click to flip it</span>
       </div>
 
       <div style={{ minWidth: 0, width: "100%" }}>
-        <h1 style={{ marginTop: 0 }}>
-          {card.name}
-        </h1>
-        <p className="muted" style={{ marginTop: -4 }}>
-          <span className={`pill ${card.rarity}`}>{RARITY[card.rarity].label}</span>{" "}
-          {card.overall} overall · {card.role.name} · {card.element.name} type
-          {card.location ? ` · ${card.location}` : ""} ·{" "}
-          <a href={`https://github.com/${card.login}`} target="_blank" rel="noopener noreferrer">@{card.login}</a>
-        </p>
+        <Reveal>
+          <p className="eyebrow"><i style={{ background: card.element.color }} /> {card.element.name} type · {card.role.name}</p>
+          <h1 className="card-title">{card.name}</h1>
+          <p className="muted" style={{ marginTop: -4 }}>
+            <span className={`pill ${card.rarity}`}>{RARITY[card.rarity].label}</span>{" "}
+            {card.overall} overall{card.location ? ` · ${card.location}` : ""} ·{" "}
+            <a href={`https://github.com/${card.login}`} target="_blank" rel="noopener noreferrer">@{card.login}</a>
+          </p>
+          <CardActions login={card.login} overall={card.overall} name={card.name} url={url} />
+        </Reveal>
 
-        <CardActions login={card.login} overall={card.overall} name={card.name} url={url} />
-
-        <h2>Stats</h2>
-        {keys.map((k) => (
-          <div key={k} className="statrow" title={STAT_HINTS[k]}>
-            <span>{STAT_LABELS[k]}</span>
-            <div className="bar"><i style={{ width: `${card.stats[k]}%` }} /></div>
-            <b style={{ textAlign: "right" }}>{card.stats[k]}</b>
-          </div>
-        ))}
+        <Reveal delay={0.1}>
+          <Glow className="panel stats-panel">
+            <StatRadar cards={[card]} />
+            <div style={{ flex: 1, minWidth: 0 }}><StatBars card={card} /></div>
+          </Glow>
+        </Reveal>
 
         {card.languages.length > 0 && (
-          <>
+          <Reveal>
             <h2>Languages</h2>
             <div className="langbar">
               {card.languages.map((l) => (
@@ -85,29 +84,39 @@ export default async function CardPage({ params }: Props) {
                 <span key={l.name}><i style={{ background: l.color ?? "#777" }} />{l.name} {Math.round(l.share * 100)}%</span>
               ))}
             </div>
-          </>
+          </Reveal>
         )}
 
-        <h2>Moves</h2>
-        <div className="facts" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))" }}>
-          {card.moves.map((m) => (
-            <a key={m.name} className="fact" href={m.homepage ?? m.url} target="_blank" rel="noopener noreferrer" style={{ textDecoration: "none" }}>
-              <b style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
-                <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{m.name}</span>
-                <span>{m.power}</span>
-              </b>
-              <span>{m.language ?? "—"} · ★ {m.stars.toLocaleString()}{m.deployed ? " · live" : ""}</span>
-              <p style={{ fontSize: 13, margin: "6px 0 0" }}>{m.description}</p>
-            </a>
+        <Reveal><h2>Moves</h2></Reveal>
+        <div className="moves">
+          {card.moves.map((m, i) => (
+            <Reveal key={m.name} delay={i * 0.08}>
+              <Glow as="a" className="move-tile" href={m.homepage ?? m.url} target="_blank" rel="noopener noreferrer">
+                <div className="move-top">
+                  <span className="dc-dot" style={{ background: m.languageColor ?? "#777" }} />
+                  <b>{m.name}</b>
+                  <span className="move-pow">{m.power}</span>
+                </div>
+                <div className="move-meter"><i style={{ width: `${(m.power / 250) * 100}%` }} /></div>
+                <span className="muted" style={{ fontSize: 12 }}>
+                  {m.language ?? "—"} · ★ {m.stars.toLocaleString()}{m.deployed ? " · " : ""}{m.deployed && <span className="dc-live">LIVE</span>}
+                </span>
+                <p>{m.description}</p>
+              </Glow>
+            </Reveal>
           ))}
         </div>
 
-        <h2>Abilities</h2>
-        {card.abilities.map((a) => (
-          <p key={a.name}><b>{a.name}.</b> <span className="muted">{a.description}</span></p>
-        ))}
+        <Reveal><h2>Abilities</h2></Reveal>
+        <div className="abilities">
+          {card.abilities.map((a, i) => (
+            <Reveal key={a.name} delay={i * 0.08}>
+              <Glow className="ability-tile"><b>✦ {a.name}</b><span className="muted">{a.description}</span></Glow>
+            </Reveal>
+          ))}
+        </div>
 
-        <h2>The numbers behind it</h2>
+        <Reveal><h2>The numbers behind it</h2></Reveal>
         <div className="facts">
           {[
             ["Contributions (12 mo)", card.raw.contributions],
@@ -121,10 +130,10 @@ export default async function CardPage({ params }: Props) {
             ["Public repos", card.raw.publicRepos],
             ["Deployed projects", card.raw.deployedProjects],
           ].map(([label, v]) => (
-            <div className="fact" key={label as string}>
+            <Glow className="fact" key={label as string}>
               <b>{(v as number).toLocaleString()}</b>
               <span>{label}</span>
-            </div>
+            </Glow>
           ))}
         </div>
         <p className="muted" style={{ fontSize: 12, marginTop: 16 }}>

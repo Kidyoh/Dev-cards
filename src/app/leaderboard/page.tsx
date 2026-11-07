@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ErrorBox } from "@/components/ErrorBox";
+import { LeaderboardView } from "@/components/LeaderboardView";
 import { COUNTRIES, getBoard, STACKS, type Board } from "@/lib/cards";
 import type { CardData } from "@/lib/types";
 
@@ -54,34 +55,7 @@ export default async function LeaderboardPage({ searchParams }: Props) {
       ) : cards.length === 0 ? (
         <p className="muted">Nobody here yet.</p>
       ) : (
-        <div className="panel lb-wrap">
-          <table className="lb">
-            <thead>
-              <tr>
-                <th>#</th><th>Developer</th><th>Tier</th><th className="num">OVR</th>
-                <th className="num">SHP</th><th className="num">CON</th><th className="num">RNG</th>
-                <th className="num">DEP</th><th className="num">IMP</th><th className="num">COL</th>
-              </tr>
-            </thead>
-            <tbody>
-              {cards.map((c, i) => (
-                <tr key={c.login}>
-                  <td>{i + 1}</td>
-                  <td style={{ whiteSpace: "nowrap" }}>
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={c.avatarUrl} alt="" />
-                    <Link href={`/u/${c.login}`}>{c.name}</Link>
-                  </td>
-                  <td><span className={`pill ${c.rarity}`}>{c.rarity}</span></td>
-                  <td className="num"><b>{c.overall}</b></td>
-                  <td className="num">{c.stats.SHP}</td><td className="num">{c.stats.CON}</td>
-                  <td className="num">{c.stats.RNG}</td><td className="num">{c.stats.DEP}</td>
-                  <td className="num">{c.stats.IMP}</td><td className="num">{c.stats.COL}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <LeaderboardView cards={cards} boardKey={`${board.kind}:${board.value}`} />
       )}
     </>
   );
