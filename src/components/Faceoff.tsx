@@ -1,38 +1,53 @@
 "use client";
 
-import { motion, useAnimationControls, useReducedMotion } from "motion/react";
+import { motion, useReducedMotion } from "motion/react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { STAT_LABELS, type CardData, type StatKey } from "@/lib/types";
 import { DevCard } from "./DevCard";
-import { Burst } from "./fx/Burst";
 import { CountUp } from "./fx/CountUp";
+import { Decode, SegBar } from "./hud";
 import { StatRadar } from "./StatPanel";
 
 const KEYS = Object.keys(STAT_LABELS) as StatKey[];
 
+function Side({ card, label, color, from, winner }: { card: CardData; label: string; color: string; from: number; winner: boolean }) {
+  return (
+    <motion.div
+      className="flex flex-col items-center gap-4"
+      initial={{ x: from, opacity: 0 }}
+      animate={{ x: 0, opacity: 1 }}
+      transition={{ type: "spring", stiffness: 110, damping: 18 }}
+    >
+      <div className="flex w-full items-center justify-between font-mono text-[10px] uppercase tracking-[0.2em]">
+        <span className="flex items-center gap-2">
+          <span className="grid size-6 place-items-center rounded-md text-[10px] font-bold text-ink" style={{ background: color }}>{label}</span>
+          @{card.login}
+        </span>
+        {winner && <span className="rounded-sm bg-ink px-1.5 py-0.5 font-bold text-lime">Winner</span>}
+      </div>
+      <Link href={`/u/${card.login}`} className={winner ? "" : "opacity-90"}>
+        <DevCard card={card} scale={0.82} flippable={false} idle />
+      </Link>
+    </motion.div>
+  );
+}
+
 export function Faceoff({ left, right }: { left: CardData; right: CardData }) {
   const reduce = useReducedMotion();
-  const shake = useAnimationControls();
-  const [stage, setStage] = useState(0); // 0 fly-in, 1 clash, 2 stats, 3 verdict
-  const [fire, setFire] = useState(0);
+  const [stage, setStage] = useState(0);
   const [run, setRun] = useState(0);
 
   useEffect(() => {
     if (reduce) {
-      setStage(3);
+      setStage(2);
       return;
     }
     setStage(0);
-    const t1 = setTimeout(async () => {
-      setStage(1);
-      setFire((f) => f + 1);
-      shake.start({ x: [0, -14, 12, -8, 6, -3, 0], y: [0, 6, -5, 3, -2, 0], transition: { duration: 0.5 } });
-    }, 650);
-    const t2 = setTimeout(() => setStage(2), 1200);
-    const t3 = setTimeout(() => setStage(3), 1200 + KEYS.length * 220 + 500);
-    return () => [t1, t2, t3].forEach(clearTimeout);
-  }, [run, reduce, shake]);
+    const t1 = setTimeout(() => setStage(1), 500);
+    const t2 = setTimeout(() => setStage(2), 500 + KEYS.length * 180 + 600);
+    return () => [t1, t2].forEach(clearTimeout);
+  }, [run, reduce]);
 
   const lw = KEYS.filter((k) => left.stats[k] > right.stats[k]).length;
   const rw = KEYS.filter((k) => right.stats[k] > left.stats[k]).length;
@@ -40,99 +55,65 @@ export function Faceoff({ left, right }: { left: CardData; right: CardData }) {
   const verdict = !winner
     ? "Dead even."
     : left.overall === right.overall
-      ? `Same overall, but ${winner.name} wins more stats.`
+      ? `${winner.name} edges it on stats.`
       : `${winner.name} takes it by ${Math.abs(left.overall - right.overall)}.`;
 
   return (
-    <motion.div animate={shake} className="faceoff">
-      <div className="vs">
-        <motion.div
-          key={`l-${run}`}
-          initial={{ x: -500, rotate: -25, opacity: 0 }}
-          animate={{ x: 0, rotate: stage >= 3 && winner === left ? -2 : 0, opacity: 1, scale: stage >= 3 && winner && winner !== left ? 0.92 : 1 }}
-          transition={{ type: "spring", stiffness: 120, damping: 14 }}
-          className={stage >= 3 && winner === left ? "is-winner" : ""}
-        >
-          <Link href={`/u/${left.login}`}><DevCard card={left} scale={0.85} flippable={false} idle /></Link>
-        </motion.div>
+    <div key={run} className="mt-12 grid items-start gap-10 xl:grid-cols-[1fr_440px_1fr]">
+      <Side card={left} label="P1" color="var(--color-lime)" from={-120} winner={stage >= 2 && winner === left} />
 
-        <div className="vs-mid">
-          <div style={{ position: "relative" }}>
-            <Burst fire={fire} colors={["#f5c84b", "#6c8bff", "#fff"]} count={90} className="vs-burst" />
-            <motion.div
-              key={`vs-${run}`}
-              className="vs-badge"
-              initial={{ scale: 4, opacity: 0, rotate: -20 }}
-              animate={stage >= 1 ? { scale: 1, opacity: 1, rotate: 0 } : {}}
-              transition={{ type: "spring", stiffness: 300, damping: 12 }}
-            >
-              VS
-            </motion.div>
-          </div>
-
-          <div className="panel cmp-panel">
-            <div className="cmp-row" style={{ fontSize: 22, fontWeight: 900 }}>
-              <span className={left.overall > right.overall ? "win" : ""}>{stage >= 2 ? <CountUp to={left.overall} /> : "–"}</span>
-              <span />
-              <span className="k">OVR</span>
-              <span />
-              <span className={right.overall > left.overall ? "win" : ""}>{stage >= 2 ? <CountUp to={right.overall} /> : "–"}</span>
-            </div>
-            {KEYS.map((k, i) => {
-              const show = stage >= 2;
-              const d = i * 0.22;
-              const lWin = left.stats[k] > right.stats[k];
-              const rWin = right.stats[k] > left.stats[k];
-              return (
-                <motion.div
-                  key={`${k}-${run}`}
-                  className="cmp-row"
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={show ? { opacity: 1, y: 0 } : {}}
-                  transition={{ delay: d, duration: 0.35 }}
-                >
-                  <motion.span className={lWin ? "win" : ""} animate={show && lWin && !reduce ? { scale: [1, 1.5, 1] } : {}} transition={{ delay: d + 0.7 }}>
-                    {left.stats[k]}
-                  </motion.span>
-                  <div className="cmp-bar left">
-                    <motion.i style={{ background: "#f5c84b" }} initial={{ width: 0 }} animate={show ? { width: `${left.stats[k]}%` } : {}} transition={{ delay: d, duration: 0.8, ease: [0.16, 1, 0.3, 1] }} />
-                  </div>
-                  <span className="k">{STAT_LABELS[k]}</span>
-                  <div className="cmp-bar">
-                    <motion.i style={{ background: "#6c8bff" }} initial={{ width: 0 }} animate={show ? { width: `${right.stats[k]}%` } : {}} transition={{ delay: d, duration: 0.8, ease: [0.16, 1, 0.3, 1] }} />
-                  </div>
-                  <motion.span className={rWin ? "win" : ""} animate={show && rWin && !reduce ? { scale: [1, 1.5, 1] } : {}} transition={{ delay: d + 0.7 }}>
-                    {right.stats[k]}
-                  </motion.span>
-                </motion.div>
-              );
-            })}
-            <StatRadar cards={[left, right]} />
-            <motion.div
-              className="verdict"
-              initial={{ scale: 0.5, opacity: 0 }}
-              animate={stage >= 3 ? { scale: 1, opacity: 1 } : {}}
-              transition={{ type: "spring", stiffness: 260, damping: 14 }}
-            >
-              {verdict}
-              <div className="muted" style={{ fontSize: 13, fontWeight: 500 }}>Stats won {lw} – {rw}</div>
-            </motion.div>
-          </div>
-          {!reduce && (
-            <button className="btn ghost" onClick={() => setRun((r) => r + 1)} style={{ marginTop: 12 }}>↻ Run it back</button>
-          )}
+      <div className="order-last overflow-hidden rounded-3xl border border-line bg-white xl:order-none">
+        <div className="flex items-center justify-between border-b border-line px-6 py-4">
+          <span className="font-display text-3xl font-bold tabular-nums">{stage >= 1 ? <CountUp to={left.overall} /> : "––"}</span>
+          <span className="font-mono text-[11px] font-bold uppercase tracking-[0.3em] text-mute">
+            <Decode text="Versus" />
+          </span>
+          <span className="font-display text-3xl font-bold tabular-nums">{stage >= 1 ? <CountUp to={right.overall} /> : "––"}</span>
         </div>
-
+        <div className="divide-y divide-line px-6">
+          {KEYS.map((k, i) => {
+            const show = stage >= 1;
+            const d = i * 0.18;
+            const lWin = left.stats[k] > right.stats[k];
+            const rWin = right.stats[k] > left.stats[k];
+            return (
+              <motion.div
+                key={k}
+                className="grid grid-cols-[28px_1fr_52px_1fr_28px] items-center gap-2 py-3"
+                initial={{ opacity: 0 }}
+                animate={show ? { opacity: 1 } : {}}
+                transition={{ delay: d, duration: 0.2 }}
+              >
+                <span className={`text-right font-mono text-sm tabular-nums ${lWin ? "font-bold" : "text-mute"}`}>{left.stats[k]}</span>
+                <div className="-scale-x-100">
+                  {show && <SegBar value={left.stats[k]} segments={14} color="var(--color-lime)" delay={d} className="h-2" />}
+                </div>
+                <span className="text-center font-mono text-[10px] font-bold tracking-[0.12em]">{k}</span>
+                <div>{show && <SegBar value={right.stats[k]} segments={14} color="var(--color-orange)" delay={d} className="h-2" />}</div>
+                <span className={`font-mono text-sm tabular-nums ${rWin ? "font-bold" : "text-mute"}`}>{right.stats[k]}</span>
+              </motion.div>
+            );
+          })}
+        </div>
+        <div className="flex justify-center border-t border-line py-4 text-ink">
+          <StatRadar cards={[left, right]} colors={["#121311", "#c27a12"]} fills={["#d4f53c", "#f5a93a"]} />
+        </div>
         <motion.div
-          key={`r-${run}`}
-          initial={{ x: 500, rotate: 25, opacity: 0 }}
-          animate={{ x: 0, rotate: stage >= 3 && winner === right ? 2 : 0, opacity: 1, scale: stage >= 3 && winner && winner !== right ? 0.92 : 1 }}
-          transition={{ type: "spring", stiffness: 120, damping: 14 }}
-          className={stage >= 3 && winner === right ? "is-winner" : ""}
+          className="flex items-center justify-between gap-4 bg-ink px-6 py-5 text-sheet"
+          initial={{ opacity: 0 }}
+          animate={stage >= 2 ? { opacity: 1 } : {}}
         >
-          <Link href={`/u/${right.login}`}><DevCard card={right} scale={0.85} flippable={false} idle /></Link>
+          <div>
+            <div className="font-display text-xl font-semibold">{verdict}</div>
+            <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-white/50">Stats won {lw} – {rw}</div>
+          </div>
+          <button onClick={() => setRun((r) => r + 1)} className="rounded-full border border-white/25 px-4 py-2 text-sm font-semibold hover:bg-white hover:text-ink">
+              ↻ Replay
+            </button>
         </motion.div>
       </div>
-    </motion.div>
+
+      <Side card={right} label="P2" color="var(--color-orange)" from={120} winner={stage >= 2 && winner === right} />
+    </div>
   );
 }

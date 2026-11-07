@@ -1,7 +1,15 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import { Background } from "@/components/fx/Background";
+import "@fontsource/space-grotesk/500.css";
+import "@fontsource/space-grotesk/600.css";
+import "@fontsource/space-grotesk/700.css";
+import "@fontsource/inter/400.css";
+import "@fontsource/inter/500.css";
+import "@fontsource/inter/600.css";
+import "@fontsource/jetbrains-mono/500.css";
+import "@fontsource/jetbrains-mono/700.css";
 import { MotionProvider } from "@/components/fx/MotionProvider";
+import { Logo, Nav } from "@/components/Nav";
+import { Barcode } from "@/components/hud";
 import { siteUrl } from "@/lib/site";
 import "./globals.css";
 
@@ -15,21 +23,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body>
-        <Background />
-        <header className="nav-wrap">
-          <nav className="nav">
-            <Link href="/" className="brand">
-              <span className="brand-mark" aria-hidden />
-              <span>DEV<b>CARDS</b></span>
-            </Link>
-            <div className="nav-links">
-              <Link href="/leaderboard" className="link">Leaderboards</Link>
-              <Link href="/compare" className="link">Compare</Link>
-              <Link href="/binder" className="link">Binder</Link>
-            </div>
-          </nav>
-        </header>
-        <main><MotionProvider>{children}</MotionProvider></main>
+        <Nav />
+        <MotionProvider>
+          <main className="flex flex-col gap-2 pt-2 sm:gap-3 sm:pt-3">{children}</main>
+        </MotionProvider>
+        <footer className="mx-auto flex max-w-[1120px] flex-wrap items-center justify-between gap-4 px-5 py-10 font-mono text-[11px] uppercase tracking-[0.16em] text-mute sm:px-8">
+          <Logo />
+          <span>Public GitHub data · refreshed every 6h · no sign-in</span>
+          <Barcode value="dev-cards-series-01" className="h-5 text-ink/70" />
+        </footer>
       </body>
     </html>
   );

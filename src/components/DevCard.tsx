@@ -232,8 +232,8 @@ function useTilt(idle: boolean, interactive: boolean) {
   const sx = useSpring(mx, { stiffness: 170, damping: 16, mass: 0.6 });
   const sy = useSpring(my, { stiffness: 170, damping: 16, mass: 0.6 });
   const pop = useSpring(hover, { stiffness: 220, damping: 18 });
-  const rotateX = useTransform(sy, (v) => (0.5 - v) * 24);
-  const rotateY = useTransform(sx, (v) => (v - 0.5) * 28);
+  const rotateX = useTransform(sy, (v) => (0.5 - v) * 14);
+  const rotateY = useTransform(sx, (v) => (v - 0.5) * 18);
   const glareX = useTransform(sx, (v) => `${v * 100}%`);
   const glareY = useTransform(sy, (v) => `${v * 100}%`);
   const shadowX = useTransform(sx, (v) => (0.5 - v) * 40);
@@ -241,8 +241,8 @@ function useTilt(idle: boolean, interactive: boolean) {
 
   useAnimationFrame((t) => {
     if (!idle || reduce || hovering.current) return;
-    mx.set(0.5 + Math.sin(t / 1700) * 0.16);
-    my.set(0.5 + Math.cos(t / 2300) * 0.1);
+    mx.set(0.5 + Math.sin(t / 2600) * 0.12);
+    my.set(0.5 + Math.cos(t / 3400) * 0.08);
   });
 
   const handlers = interactive && !reduce

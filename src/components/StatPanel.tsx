@@ -4,6 +4,7 @@ import { motion, useInView, useReducedMotion } from "motion/react";
 import { useRef } from "react";
 import { STAT_HINTS, STAT_LABELS, type CardData, type StatKey } from "@/lib/types";
 import { CountUp } from "./fx/CountUp";
+import { SegBar } from "./hud";
 
 const KEYS: StatKey[] = ["SHP", "CON", "RNG", "DEP", "IMP", "COL"];
 
@@ -12,41 +13,41 @@ function point(i: number, r: number, c = 110) {
   return [c + Math.cos(a) * r, c + Math.sin(a) * r];
 }
 
-export function StatRadar({ cards, colors = ["#f5c84b", "#6c8bff"] }: { cards: CardData[]; colors?: string[] }) {
+/** Blueprint-style hex radar. Up to two cards. */
+export function StatRadar({ cards, colors = ["#121311", "#f5a93a"], fills = ["#d4f53c", "#f5a93a"] }: { cards: CardData[]; colors?: string[]; fills?: string[] }) {
   const ref = useRef<SVGSVGElement>(null);
   const inView = useInView(ref, { once: true, margin: "-40px" });
   const reduce = useReducedMotion();
   const R = 84;
-  const poly = (c: CardData, f = 1) => KEYS.map((k, i) => point(i, (c.stats[k] / 100) * R * f).join(",")).join(" ");
+  const poly = (c: CardData) => KEYS.map((k, i) => point(i, (c.stats[k] / 100) * R).join(",")).join(" ");
   const zero = KEYS.map((_, i) => point(i, 0).join(",")).join(" ");
   return (
-    <svg ref={ref} viewBox="0 0 220 220" className="radar" role="img" aria-label="Stat radar">
+    <svg ref={ref} viewBox="0 0 220 220" className="w-full max-w-[240px] overflow-visible" role="img" aria-label="Stat radar">
       {[0.25, 0.5, 0.75, 1].map((f) => (
-        <polygon key={f} points={KEYS.map((_, i) => point(i, R * f).join(",")).join(" ")} className="radar-ring" />
+        <polygon key={f} points={KEYS.map((_, i) => point(i, R * f).join(",")).join(" ")} fill="none" stroke="currentColor" strokeOpacity={0.12} strokeDasharray={f === 1 ? undefined : "2 3"} />
       ))}
       {KEYS.map((_, i) => {
         const [x, y] = point(i, R);
-        return <line key={i} x1={110} y1={110} x2={x} y2={y} className="radar-ring" />;
+        return <line key={i} x1={110} y1={110} x2={x} y2={y} stroke="currentColor" strokeOpacity={0.12} />;
       })}
       {cards.map((c, ci) => (
         <motion.polygon
           key={c.login + ci}
           points={zero}
-          initial={{ points: zero, opacity: 0 }}
-          animate={inView || reduce ? { points: poly(c), opacity: 1 } : undefined}
-          transition={{ duration: 1.1, delay: 0.15 + ci * 0.25, ease: [0.16, 1, 0.3, 1] }}
-          fill={colors[ci]}
-          fillOpacity={0.22}
+          initial={{ points: zero }}
+          animate={inView || reduce ? { points: poly(c) } : undefined}
+          transition={{ duration: 0.9, delay: 0.1 + ci * 0.2, ease: [0.16, 1, 0.3, 1] }}
+          fill={fills[ci]}
+          fillOpacity={0.45}
           stroke={colors[ci]}
-          strokeWidth={2}
+          strokeWidth={1.5}
           strokeLinejoin="round"
-          style={{ filter: `drop-shadow(0 0 8px ${colors[ci]})` }}
         />
       ))}
       {KEYS.map((k, i) => {
-        const [x, y] = point(i, R + 16);
+        const [x, y] = point(i, R + 15);
         return (
-          <text key={k} x={x} y={y} className="radar-label" textAnchor="middle" dominantBaseline="middle">
+          <text key={k} x={x} y={y} textAnchor="middle" dominantBaseline="middle" className="fill-current font-mono text-[9px] font-bold opacity-60">
             {k}
           </text>
         );
@@ -57,19 +58,15 @@ export function StatRadar({ cards, colors = ["#f5c84b", "#6c8bff"] }: { cards: C
 
 export function StatBars({ card }: { card: CardData }) {
   return (
-    <div>
+    <div className="divide-y divide-line">
       {KEYS.map((k, i) => (
-        <div key={k} className="statrow" title={STAT_HINTS[k]}>
-          <span>{STAT_LABELS[k]}</span>
-          <div className="bar">
-            <motion.i
-              initial={{ width: 0 }}
-              whileInView={{ width: `${card.stats[k]}%` }}
-              viewport={{ once: true }}
-              transition={{ duration: 1.1, delay: 0.1 + i * 0.08, ease: [0.16, 1, 0.3, 1] }}
-            />
-          </div>
-          <b style={{ textAlign: "right" }}><CountUp to={card.stats[k]} delay={0.1 + i * 0.08} /></b>
+        <div key={k} className="grid grid-cols-[92px_1fr_34px] items-center gap-3 py-2.5" title={STAT_HINTS[k]}>
+          <span className="leading-tight">
+            <span className="block font-mono text-[11px] font-bold">{k}</span>
+            <span className="block text-xs text-mute">{STAT_LABELS[k]}</span>
+          </span>
+          <SegBar value={card.stats[k]} segments={24} delay={0.15 + i * 0.07} />
+          <b className="text-right font-display text-lg tabular-nums"><CountUp to={card.stats[k]} delay={0.15 + i * 0.07} /></b>
         </div>
       ))}
     </div>
