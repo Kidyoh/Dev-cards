@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { addToBinder, inBinder, removeFromBinder } from "@/lib/binder";
+import { fetchRetry } from "@/lib/fetchRetry";
 
 const btn = "border border-blue px-2 py-1 font-mono text-[10.5px] font-semibold uppercase text-blue hover:bg-blue hover:text-white";
 
@@ -11,7 +12,37 @@ export function CardActions({ login, overall, url }: { login: string; overall: n
   const [saved, setSaved] = useState(false);
   const [copied, setCopied] = useState(false);
   const [rival, setRival] = useState("");
+  const [dl, setDl] = useState<"idle" | "busy" | "error">("idle");
   useEffect(() => setSaved(inBinder(login)), [login]);
+
+  // Warm the edge cache for the poster and the X preview so they're ready before anyone shares.
+  useEffect(() => {
+    const t = setTimeout(() => {
+      fetchRetry(`/api/card/${login}/image?format=og`).catch(() => {});
+      fetchRetry(`/api/card/${login}/image?format=sheet`).catch(() => {});
+    }, 1200);
+    return () => clearTimeout(t);
+  }, [login]);
+
+  const sheetUrl = `/api/card/${login}/image?format=sheet`;
+  async function download(e: React.MouseEvent<HTMLAnchorElement>) {
+    e.preventDefault();
+    if (dl === "busy") return;
+    setDl("busy");
+    try {
+      const res = await fetchRetry(sheetUrl);
+      if (!res.ok) throw new Error(String(res.status));
+      const href = URL.createObjectURL(await res.blob());
+      const a = document.createElement("a");
+      a.href = href;
+      a.download = `${login}-specsheet.png`;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(href), 5000);
+      setDl("idle");
+    } catch {
+      setDl("error");
+    }
+  }
   const tweet = `My dev card is rated ${overall} overall. What's yours?`;
   const xUrl = `https://x.com/intent/post?text=${encodeURIComponent(tweet)}&url=${encodeURIComponent(url)}`;
 
@@ -19,7 +50,9 @@ export function CardActions({ login, overall, url }: { login: string; overall: n
     <div className="space-y-2">
       <div className="flex flex-wrap gap-1.5">
         <a className={`${btn} bg-blue text-white hover:bg-blue-deep`} href={xUrl} target="_blank" rel="noopener noreferrer">Share on X ↗</a>
-        <a className={btn} href={`/api/card/${login}/image?format=sheet`} download={`${login}-specsheet.png`}>Download PNG</a>
+        <a className={btn} href={sheetUrl} download={`${login}-specsheet.png`} onClick={download}>
+          {dl === "busy" ? "Rendering…" : dl === "error" ? "Retry PNG" : "Download PNG"}
+        </a>
         <button
           className={btn}
           onClick={async () => {
