@@ -32,7 +32,7 @@ const LANGS: [string, string][] = [
 ];
 const WORDS = ["nova", "forge", "pulse", "atlas", "ember", "quill", "orbit", "vector", "lumen", "drift", "cobalt", "relay"];
 const SUFFIX = ["", "-js", "-cli", "-ui", "-api", "-kit", "-rs", "-db"];
-const COUNTRIES = ["Nigeria", "Kenya", "Brazil", "India", "Germany", "United States", "Japan", "Canada"];
+const COUNTRIES = ["Addis Ababa, Ethiopia", "Adama, Ethiopia", "Bahir Dar", "Hawassa", "Berlin, Germany", null];
 
 export function demoUser(login: string, hint?: { location?: string; language?: string }): GhUser {
   const r = rng(login.toLowerCase());
@@ -91,7 +91,7 @@ export function demoUser(login: string, hint?: { location?: string; language?: s
     login,
     name: login.charAt(0).toUpperCase() + login.slice(1),
     avatarUrl: `https://avatars.githubusercontent.com/${encodeURIComponent(login)}?size=400`,
-    location: hint?.location ?? COUNTRIES[Math.floor(r() * COUNTRIES.length)],
+    location: hint?.location ?? COUNTRIES[Math.floor(r() * COUNTRIES.length)] ?? null,
     createdAt: created.toISOString(),
     followers: { totalCount: Math.floor(Math.pow(talent, 3) * 5000 * r()) },
     repositoriesContributedTo: { totalCount: Math.floor(talent * r() * 30) },
@@ -105,10 +105,4 @@ export function demoUser(login: string, hint?: { location?: string; language?: s
     },
     repositories: { totalCount: repoCount, nodes: repos },
   };
-}
-
-export function demoSearch(seed: string, n: number): string[] {
-  const r = rng(seed);
-  const names = ["ada", "linus", "grace", "ken", "margaret", "dennis", "barbara", "guido", "yukihiro", "anders", "sophie", "chidi", "amara", "kofi", "priya", "mateo", "lena", "hiro", "zara", "tunde"];
-  return Array.from({ length: n }, (_, i) => `${names[Math.floor(r() * names.length)]}${Math.floor(r() * 900 + 100)}${i}`);
 }

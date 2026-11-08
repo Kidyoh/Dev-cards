@@ -3,11 +3,10 @@ import { Axis, Barcode, Bracket, Cells, Headline, Label, Spark, Tag, ThreadRow, 
 import { DevCard } from "@/components/DevCard";
 import { PointCloud } from "@/components/PointCloud";
 import { ScanInput } from "@/components/ScanInput";
-import { getCard } from "@/lib/cards";
+import { getBoard } from "@/lib/cards";
 import { sampleCard } from "@/lib/sample";
 import { STAT_HINTS, STAT_LABELS, type CardData, type Rarity, type StatKey } from "@/lib/types";
 
-const FEATURED = ["sindresorhus", "gaearon", "torvalds", "yyx990803", "tj", "kentcdodds", "addyosmani", "antfu"];
 const RANK: Record<Rarity, number> = { legacy: 3, gold: 2, silver: 1, bronze: 0 };
 const KEYS: StatKey[] = ["SHP", "CON", "RNG", "DEP", "IMP", "COL"];
 
@@ -46,8 +45,8 @@ function Chip() {
 }
 
 export default async function Home() {
-  const featured = (await Promise.allSettled(FEATURED.map((u) => getCard(u))))
-    .flatMap((r) => (r.status === "fulfilled" ? [r.value] : []));
+  // Featured = the top of the Ethiopia board (people already scanned). Nothing is fetched from GitHub here.
+  const featured = await getBoard(undefined, 8).catch(() => []);
   const subject: CardData = [...featured].sort((a, b) => RANK[b.rarity] - RANK[a.rarity] || b.overall - a.overall)[0] ?? sampleCard("gold");
   const s = subject.stats;
   const seconds = String(subject.raw.activeDays % 60).padStart(2, "0");
@@ -199,7 +198,7 @@ export default async function Home() {
       {featured.length > 0 && (
         <section className="mx-4 mt-16 sm:mx-6">
           <div className="flex flex-wrap items-end justify-between gap-4">
-            <Headline as="h2" className="text-[clamp(36px,4.6vw,64px)]">Scanned<br />subjects.</Headline>
+            <Headline as="h2" className="text-[clamp(36px,4.6vw,64px)]">Top of the<br />Ethiopia board.</Headline>
             <Link href="/leaderboard" className="border border-blue px-2 py-[2px] font-mono text-[10px] font-semibold uppercase text-blue hover:bg-blue hover:text-white">
               Open the board →
             </Link>

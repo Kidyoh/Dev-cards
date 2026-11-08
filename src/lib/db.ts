@@ -60,8 +60,17 @@ export async function saveCard(db: D1Like, card: CardData): Promise<void> {
 
 /** Top scanned cards, optionally filtered by country or top language. */
 export async function topCards(db: D1Like, filter: { country?: string; language?: string }, limit = 50): Promise<CardData[]> {
-  const where = filter.country ? "WHERE country = ?" : filter.language ? "WHERE top_language = ? COLLATE NOCASE" : "";
-  const args = filter.country ? [filter.country] : filter.language ? [filter.language] : [];
+  const conds: string[] = [];
+  const args: unknown[] = [];
+  if (filter.country) {
+    conds.push("country = ?");
+    args.push(filter.country);
+  }
+  if (filter.language) {
+    conds.push("top_language = ? COLLATE NOCASE");
+    args.push(filter.language);
+  }
+  const where = conds.length ? `WHERE ${conds.join(" AND ")}` : "";
   const { results } = await db
     .prepare(`SELECT data FROM cards ${where} ORDER BY overall DESC, scanned_at DESC LIMIT ?`)
     .bind(...args, limit)
@@ -69,11 +78,21 @@ export async function topCards(db: D1Like, filter: { country?: string; language?
   return results.map((r) => JSON.parse(r.data) as CardData);
 }
 
+/** 1-based rank on a country board (ties share a rank), or null if not on it. */
+export async function rankOf(db: D1Like, login: string, country: string): Promise<{ rank: number; total: number } | null> {
+  const me = await db.prepare("SELECT overall FROM cards WHERE login = ? AND country = ?").bind(login.toLowerCase(), country).first<{ overall: number }>();
+  if (!me) return null;
+  const above = await db.prepare("SELECT COUNT(*) AS n FROM cards WHERE country = ? AND overall > ?").bind(country, me.overall).first<{ n: number }>();
+  const total = await db.prepare("SELECT COUNT(*) AS n FROM cards WHERE country = ?").bind(country).first<{ n: number }>();
+  return { rank: (above?.n ?? 0) + 1, total: total?.n ?? 0 };
+}
+
 export async function countCards(db: D1Like): Promise<number> {
   const row = await db.prepare("SELECT COUNT(*) AS n FROM cards").bind().first<{ n: number }>();
   return row?.n ?? 0;
 }
 
+/** Kept for the old GitHub-seeded boards (no longer used). */
 export async function readBoard(db: D1Like, key: string, maxAgeMs: number): Promise<string[] | null> {
   const row = await db.prepare("SELECT data, fetched_at FROM boards WHERE key = ?").bind(key).first<{ data: string; fetched_at: number }>();
   if (!row || Date.now() - row.fetched_at > maxAgeMs) return null;

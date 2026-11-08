@@ -1,11 +1,9 @@
-import { COUNTRIES } from "./countries";
-import { getDB, readBoard, readCard, saveBoard, saveCard, topCards } from "./db";
-import { DEMO, demoSearch, demoUser } from "./demo";
-import { fetchUser, GitHubError, searchUsers } from "./github";
+import { countryFromLocation } from "./countries";
+import { getDB, rankOf, readCard, saveCard, topCards } from "./db";
+import { DEMO, demoUser } from "./demo";
+import { fetchUser, GitHubError } from "./github";
 import { computeCard } from "./stats";
 import type { CardData } from "./types";
-
-export { COUNTRIES };
 
 const SIX_HOURS_MS = 6 * 60 * 60 * 1000;
 
@@ -27,14 +25,22 @@ const memory = new Map<string, { card: CardData; at: number }>();
  * Fetch + score a user's card. Cards are stored in D1 and reused for six hours; every scan also
  * puts the developer on the leaderboard.
  */
-export async function getCard(login: string, hint?: { location?: string; language?: string }): Promise<CardData> {
+const RESCAN_MIN_MS = 10 * 60 * 1000;
+
+export async function getCard(
+  login: string,
+  hint?: { location?: string; language?: string },
+  opts: { rescan?: boolean } = {},
+): Promise<CardData> {
   if (!isValidUsername(login)) throw new GitHubError(`"${login}" isn't a valid GitHub username`, 400);
   const key = login.toLowerCase();
   const db = await getDB();
 
   if (db) {
     const hit = await readCard(db, key).catch(() => null);
-    if (hit && Date.now() - hit.scannedAt < SIX_HOURS_MS) return hit.card;
+    const age = hit ? Date.now() - hit.scannedAt : Infinity;
+    // A rescan (e.g. after updating your GitHub location) is allowed once every 10 minutes.
+    if (hit && age < (opts.rescan ? RESCAN_MIN_MS : SIX_HOURS_MS)) return hit.card;
     try {
       const card = await buildCard(key, hint);
       await saveCard(db, card).catch(() => {});
@@ -46,81 +52,44 @@ export async function getCard(login: string, hint?: { location?: string; languag
   }
 
   const m = memory.get(key);
-  if (m && Date.now() - m.at < SIX_HOURS_MS) return m.card;
+  if (m && Date.now() - m.at < (opts.rescan ? RESCAN_MIN_MS : SIX_HOURS_MS)) return m.card;
   const card = await buildCard(key, hint);
   memory.set(key, { card, at: Date.now() });
   return card;
 }
 
-// --- Leaderboards ---------------------------------------------------------------------------
+// --- The board: Ethiopia only, built from people scanned on Specsheet -----------------------
 
-export const STACKS = [
-  "TypeScript", "JavaScript", "Python", "Rust", "Go", "Java", "Kotlin", "Swift", "C++", "C#", "Ruby",
-  "PHP", "Elixir", "Haskell", "Zig", "Dart",
+/** The one country the board covers. A card joins when its GitHub location is in Ethiopia. */
+export const BOARD_COUNTRY = "Ethiopia";
+
+export const LANGUAGES = [
+  "TypeScript", "JavaScript", "Python", "Go", "Java", "Kotlin", "Dart", "PHP", "C#", "C++", "Rust", "Swift", "Ruby",
 ];
 
-export type Board = { kind: "all" } | { kind: "country"; value: string } | { kind: "stack"; value: string };
-export type BoardResult = {
-  cards: CardData[];
-  /** "scanned": ranked from people scanned on Specsheet. "github": seeded from GitHub's most-followed. */
-  source: "scanned" | "github";
-};
-
-async function mapLimit<T, R>(items: T[], limit: number, fn: (t: T) => Promise<R>): Promise<R[]> {
-  const out: R[] = new Array(items.length);
-  let i = 0;
-  await Promise.all(
-    Array.from({ length: Math.min(limit, items.length) }, async () => {
-      while (i < items.length) {
-        const idx = i++;
-        out[idx] = await fn(items[idx]);
-      }
-    }),
-  );
-  return out;
+export function onBoard(card: CardData): boolean {
+  return countryFromLocation(card.location) === BOARD_COUNTRY;
 }
 
-/** Seed list: GitHub's most-followed devs for a country/stack (cached 6h in D1). */
-async function githubSeed(board: Exclude<Board, { kind: "all" }>): Promise<CardData[]> {
-  const key = `${board.kind}:${board.value.toLowerCase()}`;
+/** Top scanned Ethiopian developers, optionally by main language. Nothing is fetched from GitHub here. */
+export async function getBoard(language?: string, limit = 100): Promise<CardData[]> {
+  const lang = language ? LANGUAGES.find((l) => l.toLowerCase() === language.toLowerCase()) : undefined;
+  if (language && !lang) throw new GitHubError(`Unknown language "${language}"`, 400);
   const db = await getDB();
-  let logins = db ? await readBoard(db, key, SIX_HOURS_MS).catch(() => null) : null;
-  if (!logins) {
-    if (DEMO) {
-      logins = demoSearch(key, 15);
-    } else {
-      const q =
-        board.kind === "country"
-          ? `location:"${board.value}" type:user followers:>=50 repos:>=5`
-          : `language:"${board.value}" type:user followers:>=200 repos:>=5`;
-      logins = await searchUsers(q, 15);
-    }
-    if (db) await saveBoard(db, key, logins).catch(() => {});
-  }
-  const hint = board.kind === "country" ? { location: board.value } : { language: board.value };
-  const cards = await mapLimit(logins, 5, async (login) => getCard(login, hint).catch(() => null));
-  return cards.filter((c): c is CardData => c !== null).sort((a, b) => b.overall - a.overall);
+  if (db) return topCards(db, { country: BOARD_COUNTRY, language: lang }, limit);
+  return [...memory.values()]
+    .map((m) => m.card)
+    .filter((c) => onBoard(c) && (!lang || c.languages[0]?.name === lang))
+    .sort((a, b) => b.overall - a.overall)
+    .slice(0, limit);
 }
 
-export async function getBoard(board: Board): Promise<BoardResult> {
-  if (board.kind !== "all") {
-    const want = board.value.toLowerCase();
-    const list = board.kind === "country" ? COUNTRIES : STACKS;
-    const value = list.find((v) => v.toLowerCase() === want);
-    if (!value) throw new GitHubError(`Unknown ${board.kind} "${board.value}"`, 400);
-    board = { ...board, value };
-  }
-
+/** Rank on the board, or null when the card isn't on it. */
+export async function boardRank(card: CardData): Promise<{ rank: number; total: number } | null> {
+  if (!onBoard(card)) return null;
   const db = await getDB();
-  if (db) {
-    const filter = board.kind === "country" ? { country: board.value } : board.kind === "stack" ? { language: board.value } : {};
-    const scanned = await topCards(db, filter, 50).catch(() => [] as CardData[]);
-    if (scanned.length >= 5 || board.kind === "all") return { cards: scanned, source: "scanned" };
-  }
-  if (board.kind === "all") {
-    const local = [...memory.values()].map((m) => m.card).sort((a, b) => b.overall - a.overall).slice(0, 50);
-    return { cards: local, source: "scanned" };
-  }
-  // Too few scans here yet: seed from GitHub. Those scans land in D1, so the board fills itself.
-  return { cards: await githubSeed(board), source: "github" };
+  if (db) return rankOf(db, card.login, BOARD_COUNTRY);
+  const board = await getBoard();
+  const i = board.findIndex((c) => c.login.toLowerCase() === card.login.toLowerCase());
+  return i < 0 ? null : { rank: i + 1, total: board.length };
 }

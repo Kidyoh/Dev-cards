@@ -1,17 +1,17 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Headline, Label } from "@/components/bp";
+import { Headline, Label, Win } from "@/components/bp";
 import { BoardList } from "@/components/BoardList";
 import { ErrorBox } from "@/components/ErrorBox";
-import { COUNTRIES, getBoard, STACKS, type Board } from "@/lib/cards";
+import { ScanInput } from "@/components/ScanInput";
+import { getBoard, LANGUAGES } from "@/lib/cards";
 import type { CardData } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
-export const metadata: Metadata = { title: "Board" };
-
+export const metadata: Metadata = { title: "Ethiopia board" };
 export const dynamic = "force-dynamic";
 
-type Props = { searchParams: Promise<{ country?: string; stack?: string }> };
+type Props = { searchParams: Promise<{ lang?: string }> };
 
 function Opt({ href, active, children }: { href: string; active: boolean; children: React.ReactNode }) {
   return (
@@ -22,57 +22,70 @@ function Opt({ href, active, children }: { href: string; active: boolean; childr
 }
 
 export default async function LeaderboardPage({ searchParams }: Props) {
-  const sp = await searchParams;
-  const board: Board = sp.stack ? { kind: "stack", value: sp.stack } : sp.country ? { kind: "country", value: sp.country } : { kind: "all" };
+  const { lang } = await searchParams;
   let cards: CardData[] = [];
-  let source: "scanned" | "github" = "scanned";
   let error: unknown = null;
   try {
-    ({ cards, source } = await getBoard(board));
+    cards = await getBoard(lang);
   } catch (e) {
     error = e;
   }
-  const on = (kind: Board["kind"], v: string) => board.kind === kind && "value" in board && board.value.toLowerCase() === v.toLowerCase();
-  const title = board.kind === "all" ? "Top overall" : board.kind === "country" ? `Top in ${board.value}` : `Top ${board.value}`;
+  const active = lang ? LANGUAGES.find((l) => l.toLowerCase() === lang.toLowerCase()) : undefined;
 
   return (
     <section className="px-4 pt-6 sm:px-6">
-      <Label className="text-blue/60">Procedure · ranking</Label>
-      <Headline className="mt-2 text-[clamp(44px,6.4vw,92px)]">The board.</Headline>
-      <p className="mt-3 max-w-lg font-mono text-[11px] uppercase leading-relaxed text-blue">
-        Everyone scanned on Specsheet, ranked by card. Filter by country or main language.
+      <Label className="text-blue/60">Ranking · Ethiopia 🇪🇹</Label>
+      <Headline className="mt-2 text-[clamp(44px,6.4vw,92px)]">
+        Ethiopia&apos;s
+        <br />
+        top developers.
+      </Headline>
+      <p className="mt-3 max-w-xl font-mono text-[11px] uppercase leading-relaxed text-blue">
+        Everyone scanned on Specsheet whose GitHub location is in Ethiopia, ranked by card. Scan yourself to join.
       </p>
 
       <div className="mt-8 grid gap-3 border border-blue bg-white p-3 md:grid-cols-[90px_1fr]">
-        <Label className="pt-0.5">Scope</Label>
+        <Label className="pt-0.5">Language</Label>
         <div className="flex flex-wrap gap-1">
-          <Opt href="/leaderboard" active={board.kind === "all"}>All</Opt>
-        </div>
-        <Label className="pt-0.5">Country</Label>
-        <div className="flex flex-wrap gap-1">
-          {COUNTRIES.map((c) => <Opt key={c} href={`/leaderboard?country=${encodeURIComponent(c)}`} active={on("country", c)}>{c}</Opt>)}
-        </div>
-        <Label className="pt-0.5">Stack</Label>
-        <div className="flex flex-wrap gap-1">
-          {STACKS.map((s) => <Opt key={s} href={`/leaderboard?stack=${encodeURIComponent(s)}`} active={on("stack", s)}>{s}</Opt>)}
+          <Opt href="/leaderboard" active={!active}>All</Opt>
+          {LANGUAGES.map((l) => (
+            <Opt key={l} href={`/leaderboard?lang=${encodeURIComponent(l)}`} active={active === l}>{l}</Opt>
+          ))}
         </div>
       </div>
 
       <Headline as="h2" className="mt-12 text-[clamp(28px,3.4vw,44px)]">
-        {title}
+        {active ? `Top ${active} devs` : "Top overall"}
       </Headline>
-      {!error && (
-        <p className="mt-2 font-mono text-[10px] uppercase text-blue/70">
-          {source === "scanned"
-            ? `Ranked from ${cards.length} scanned developer${cards.length === 1 ? "" : "s"}`
-            : "Few scans here yet · seeded from GitHub's most-followed · every scan joins the board"}
-        </p>
-      )}
-      {error ? <div className="mt-6"><ErrorBox error={error} /></div> : cards.length === 0 ? (
-        <p className="mt-6 font-mono text-[11px] uppercase text-blue">Nobody scanned yet. Scan someone to start the board.</p>
+      {error ? (
+        <div className="mt-6"><ErrorBox error={error} /></div>
+      ) : cards.length === 0 ? (
+        <div className="mt-6 max-w-md">
+          <Win title="Board empty">
+            <p className="mb-2 font-mono text-[10.5px] uppercase leading-snug text-blue">
+              {active ? `No ${active} developers on the board yet.` : "Nobody on the board yet."} Be the first: scan yourself.
+            </p>
+            <ScanInput />
+          </Win>
+        </div>
       ) : (
-        <BoardList cards={cards} />
+        <>
+          <p className="mt-2 font-mono text-[10px] uppercase text-blue/70">
+            {cards.length} developer{cards.length === 1 ? "" : "s"} ranked
+          </p>
+          <BoardList cards={cards} />
+        </>
       )}
+
+      <div className="mt-12 max-w-xl">
+        <Win title="How to get on the board">
+          <ol className="space-y-1 font-mono text-[10.5px] uppercase leading-snug text-blue">
+            <li>01. Set your GitHub profile location to Ethiopia or your city (Addis Ababa, Adama, Hawassa…)</li>
+            <li>02. Scan your username on Specsheet</li>
+            <li>03. Already scanned before? Open your card and hit Rescan</li>
+          </ol>
+        </Win>
+      </div>
     </section>
   );
 }

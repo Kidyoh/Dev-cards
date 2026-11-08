@@ -3,7 +3,11 @@
  * with a list of names, codes and big cities. Unknown locations are stored as NULL.
  */
 export const COUNTRY_ALIASES: Record<string, string[]> = {
-  Ethiopia: ["ethiopia", "addis ababa", "addis abeba", "adama", "bahir dar", "hawassa", "mekelle", "🇪🇹"],
+  Ethiopia: [
+    "ethiopia", "ethiopian", "addis ababa", "addis abeba", "addis", "adama", "nazret", "bahir dar", "bahirdar",
+    "hawassa", "awassa", "mekelle", "mekele", "dire dawa", "gondar", "gonder", "jimma", "dessie", "bishoftu",
+    "debre zeit", "arba minch", "harar", "jijiga", "shashemene", "debre markos", "debre birhan", "wolaita", "🇪🇹",
+  ],
   Nigeria: ["nigeria", "lagos", "abuja", "ibadan", "port harcourt", "enugu", "naija", "🇳🇬"],
   Kenya: ["kenya", "nairobi", "mombasa", "kisumu", "🇰🇪"],
   Ghana: ["ghana", "accra", "kumasi", "🇬🇭"],

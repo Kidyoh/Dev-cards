@@ -5,18 +5,18 @@ import { CardActions } from "@/components/CardActions";
 import { Callouts } from "@/components/Callouts";
 import { DevCard } from "@/components/DevCard";
 import { ErrorBox } from "@/components/ErrorBox";
-import { getCard } from "@/lib/cards";
+import { boardRank, getCard } from "@/lib/cards";
 import { GitHubError } from "@/lib/github";
 import { siteUrl } from "@/lib/site";
 import { RARITY } from "@/lib/theme";
 import { STAT_LABELS, type CardData, type StatKey } from "@/lib/types";
 
-type Props = { params: Promise<{ username: string }> };
+type Props = { params: Promise<{ username: string }>; searchParams: Promise<{ rescan?: string }> };
 const KEYS: StatKey[] = ["SHP", "CON", "RNG", "DEP", "IMP", "COL"];
 
-async function load(username: string): Promise<{ card?: CardData; error?: unknown }> {
+async function load(username: string, rescan = false): Promise<{ card?: CardData; error?: unknown }> {
   try {
-    return { card: await getCard(decodeURIComponent(username)) };
+    return { card: await getCard(decodeURIComponent(username), undefined, { rescan }) };
   } catch (error) {
     if (error instanceof GitHubError && error.status === 404) notFound();
     return { error };
@@ -38,12 +38,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-export default async function CardPage({ params }: Props) {
+export default async function CardPage({ params, searchParams }: Props) {
   const { username } = await params;
-  const { card, error } = await load(username);
+  const { rescan } = await searchParams;
+  const { card, error } = await load(username, rescan === "1");
   if (!card) return <div className="mx-4 mt-10 sm:mx-6"><ErrorBox error={error} /></div>;
 
   const url = `${siteUrl()}/u/${card.login}`;
+  const rank = await boardRank(card).catch(() => null);
   const facts: [string, number][] = [
     ["Contributions", card.raw.contributions],
     ["Commits", card.raw.commits],
@@ -74,6 +76,26 @@ export default async function CardPage({ params }: Props) {
             github.com/{card.login} ↗
           </a>
           <CardActions login={card.login} overall={card.overall} url={url} />
+          <Win title="Ethiopia board" delay={120}>
+            {rank ? (
+              <div className="flex items-end justify-between gap-3">
+                <div>
+                  <div className="font-mono text-[9px] uppercase text-blue/60">Rank</div>
+                  <div className="font-serif text-4xl font-light text-blue">#{rank.rank}</div>
+                </div>
+                <div className="text-right font-mono text-[10px] uppercase text-blue">
+                  of {rank.total} on the board
+                  <br />
+                  <a href="/leaderboard" className="underline underline-offset-2">Open board →</a>
+                </div>
+              </div>
+            ) : (
+              <div className="font-mono text-[10.5px] uppercase leading-snug text-blue">
+                Not on the board. Set your GitHub location to Ethiopia or your city, then{" "}
+                <a href={`/u/${card.login}?rescan=1`} className="underline underline-offset-2">rescan</a>.
+              </div>
+            )}
+          </Win>
           <Win title="Abilities" delay={150}>
             <ol className="space-y-1.5 font-mono text-[10.5px] text-blue">
               {card.abilities.map((a, i) => (
@@ -171,7 +193,10 @@ export default async function CardPage({ params }: Props) {
             </div>
           ))}
         </div>
-        <p className="mt-3 font-mono text-[9px] uppercase text-blue/60">Scanned {new Date(card.generatedAt).toUTCString()} · refreshes every 6h</p>
+        <p className="mt-3 font-mono text-[9px] uppercase text-blue/60">
+          Scanned {new Date(card.generatedAt).toUTCString()} · refreshes every 6h ·{" "}
+          <a href={`/u/${card.login}?rescan=1`} className="underline underline-offset-2">Rescan now</a>
+        </p>
       </section>
     </>
   );

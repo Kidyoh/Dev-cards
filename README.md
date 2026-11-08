@@ -79,9 +79,10 @@ npm run deploy
 
 To test the Worker locally: `cp .dev.vars.example .dev.vars`, then `npm run db:migrate:local && npm run preview`.
 
-**Leaderboards** rank everyone scanned on Specsheet, filtered by country (parsed from the GitHub location)
-or main language. A country or stack with fewer than 5 scans is seeded from GitHub's most-followed
-developers, and those scans then join the board.
+**The board is Ethiopia only.** It lists developers who have been scanned on Specsheet and whose GitHub
+location is in Ethiopia (country name or a city such as Addis Ababa, Adama, Hawassa or Bahir Dar), ranked by
+overall, with a filter by main language. Nothing is auto-scanned; you join by being scanned. If you set
+your location after scanning, open your card and use **Rescan** (allowed every 10 minutes).
 
 **Custom domain:** add the domain to Cloudflare, point its nameservers at Cloudflare at your registrar, then
 go to Workers → specsheet → Settings → Domains & Routes → Add custom domain. Update `SITE_URL` in
