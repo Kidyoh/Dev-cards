@@ -75,7 +75,7 @@ export default async function CardPage({ params, searchParams }: Props) {
           <a href={`https://github.com/${card.login}`} target="_blank" rel="noopener noreferrer" className="font-mono text-[11px] uppercase text-blue underline underline-offset-2">
             github.com/{card.login} ↗
           </a>
-          <CardActions login={card.login} overall={card.overall} url={url} />
+          <CardActions card={card} url={url} />
           <Win title="Ethiopia board" delay={120}>
             {rank ? (
               <div className="flex items-end justify-between gap-3">

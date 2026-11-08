@@ -1,11 +1,24 @@
 import { ImageResponse } from "next/og";
 import { getCard } from "@/lib/cards";
+
 import { GitHubError } from "@/lib/github";
 import { avatarDataUri, CardShot, cardShotSize, fonts, OgImage } from "@/lib/render";
 import { POSTER, SpecPoster } from "@/lib/poster";
 import { siteUrl } from "@/lib/site";
 
 export const runtime = "nodejs";
+
+type KVPut = { put(key: string, value: ArrayBuffer, opts?: { expirationTtl?: number }): Promise<void> };
+
+async function imagesKV(): Promise<KVPut | null> {
+  try {
+    const { getCloudflareContext } = await import("@opennextjs/cloudflare");
+    const { env } = await getCloudflareContext({ async: true });
+    return ((env as Record<string, unknown>).IMAGES as KVPut) ?? null;
+  } catch {
+    return null;
+  }
+}
 
 type EdgeCache = { match(r: Request): Promise<Response | undefined>; put(r: Request, res: Response): Promise<void> };
 
@@ -37,6 +50,22 @@ async function render(req: Request, { params }: { params: Promise<{ username: st
   const format = f === "og" || f === "sheet" ? f : "card";
   try {
     const card = await getCard(username);
+
+    const res = await draw(card, format);
+    // Store it in KV for 6h; worker.ts serves later requests from there without booting Next.js.
+    const kv = await imagesKV();
+    if (kv && res.status === 200) {
+      const png = await res.clone().arrayBuffer();
+      await kv.put(`${format}:${card.login.toLowerCase()}`, png, { expirationTtl: 21600 }).catch(() => {});
+    }
+    return res;
+  } catch (e) {
+    const status = e instanceof GitHubError ? e.status : 500;
+    return new Response(e instanceof GitHubError ? e.message : "Could not render card", { status });
+  }
+}
+
+async function draw(card: Awaited<ReturnType<typeof getCard>>, format: "og" | "card" | "sheet"): Promise<Response> {
     const [avatar, loaded] = await Promise.all([avatarDataUri(card.avatarUrl), fonts()]);
     // An empty list would replace next/og's built-in font, so only pass ours if they loaded.
     const fontList = loaded.length ? loaded : undefined;
@@ -54,8 +83,4 @@ async function render(req: Request, { params }: { params: Promise<{ username: st
     }
     const s = 2;
     return new ImageResponse(<CardShot card={card} avatar={avatar} s={s} />, { ...cardShotSize(card, s), fonts: fontList, headers });
-  } catch (e) {
-    const status = e instanceof GitHubError ? e.status : 500;
-    return new Response(e instanceof GitHubError ? e.message : "Could not render card", { status });
-  }
 }

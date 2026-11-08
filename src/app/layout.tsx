@@ -3,6 +3,7 @@ import "@fontsource/zilla-slab/300.css";
 import "@fontsource/zilla-slab/600.css";
 import "@fontsource/ibm-plex-sans/400.css";
 import "@fontsource/ibm-plex-sans/500.css";
+import "@fontsource/ibm-plex-sans/700.css";
 import "@fontsource/ibm-plex-mono/400.css";
 import "@fontsource/ibm-plex-mono/600.css";
 import { Barcode, TopBar } from "@/components/bp";

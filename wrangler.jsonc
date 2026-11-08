@@ -1,7 +1,7 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "specsheet",
-  "main": ".open-next/worker.js",
+  "main": "worker.ts",
   "compatibility_date": "2026-10-15",
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
   "assets": { "directory": ".open-next/assets", "binding": "ASSETS" },
@@ -13,6 +13,10 @@
       "database_id": "5f26c970-b2b9-4a35-a52a-96c499f6f438",
       "migrations_dir": "migrations"
     }
+  ],
+  "kv_namespaces": [
+    // Rendered share images (PNG), served by worker.ts without touching Next.js. Entries expire after 6h.
+    { "binding": "IMAGES", "id": "e2dbf462781648fea3a4f4542f6d6c56" }
   ],
   "vars": {
     // Public URL, used for share links and Open Graph images. Change when the custom domain is live.

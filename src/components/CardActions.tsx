@@ -3,11 +3,14 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { addToBinder, inBinder, removeFromBinder } from "@/lib/binder";
+import { renderCardPng } from "@/lib/cardCanvas";
 import { fetchRetry } from "@/lib/fetchRetry";
+import type { CardData } from "@/lib/types";
 
 const btn = "border border-blue px-2 py-1 font-mono text-[10.5px] font-semibold uppercase text-blue hover:bg-blue hover:text-white";
 
-export function CardActions({ login, overall, url }: { login: string; overall: number; url: string }) {
+export function CardActions({ card, url }: { card: CardData; url: string }) {
+  const { login, overall } = card;
   const router = useRouter();
   const [saved, setSaved] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -15,35 +18,32 @@ export function CardActions({ login, overall, url }: { login: string; overall: n
   const [dl, setDl] = useState<"idle" | "busy" | "error">("idle");
   useEffect(() => setSaved(inBinder(login)), [login]);
 
-  // Warm the edge cache for the poster and the X preview so they're ready before anyone shares.
+  // Warm the edge cache for the X preview image so it's ready before anyone shares the link.
   useEffect(() => {
-    const t = setTimeout(() => {
-      fetchRetry(`/api/card/${login}/image?format=og`).catch(() => {});
-      fetchRetry(`/api/card/${login}/image?format=card`).catch(() => {});
-    }, 1200);
+    const t = setTimeout(() => fetchRetry(`/api/card/${login}/image?format=og`, 3).catch(() => {}), 1500);
     return () => clearTimeout(t);
   }, [login]);
 
-  const cardUrl = `/api/card/${login}/image?format=card`;
-  const sheetUrl = `/api/card/${login}/image?format=sheet`;
-  async function download(e: React.MouseEvent<HTMLAnchorElement>, url: string, name: string) {
-    e.preventDefault();
+  // The PNG is drawn in the browser (canvas): instant, and no server CPU.
+  async function download() {
     if (dl === "busy") return;
     setDl("busy");
     try {
-      const res = await fetchRetry(url);
-      if (!res.ok) throw new Error(String(res.status));
-      const href = URL.createObjectURL(await res.blob());
+      const blob = await renderCardPng(card);
+      const href = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = href;
-      a.download = name;
+      a.download = `${login}-specsheet-card.png`;
+      document.body.appendChild(a);
       a.click();
-      setTimeout(() => URL.revokeObjectURL(href), 5000);
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(href), 10_000);
       setDl("idle");
     } catch {
       setDl("error");
     }
   }
+
   const tweet = `My dev card is rated ${overall} overall. What's yours?`;
   const xUrl = `https://x.com/intent/post?text=${encodeURIComponent(tweet)}&url=${encodeURIComponent(url)}`;
 
@@ -51,12 +51,9 @@ export function CardActions({ login, overall, url }: { login: string; overall: n
     <div className="space-y-2">
       <div className="flex flex-wrap gap-1.5">
         <a className={`${btn} bg-blue text-white hover:bg-blue-deep`} href={xUrl} target="_blank" rel="noopener noreferrer">Share on X ↗</a>
-        <a className={btn} href={cardUrl} download={`${login}-card.png`} onClick={(e) => download(e, cardUrl, `${login}-card.png`)}>
-          {dl === "busy" ? "Rendering…" : dl === "error" ? "Retry PNG" : "Download card"}
-        </a>
-        <a className={btn} href={sheetUrl} download={`${login}-specsheet.png`} onClick={(e) => download(e, sheetUrl, `${login}-specsheet.png`)}>
-          Spec sheet
-        </a>
+        <button className={btn} onClick={download} disabled={dl === "busy"}>
+          {dl === "busy" ? "Drawing…" : dl === "error" ? "Retry download" : "Download card"}
+        </button>
         <button
           className={btn}
           onClick={async () => {

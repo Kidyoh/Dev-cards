@@ -148,8 +148,8 @@ export function shieldDataUri(rarity: Rarity, w?: number, h?: number) {
   return `data:image/svg+xml;base64,${Buffer.from(shieldSvg(rarity, w, h)).toString("base64")}`;
 }
 
-/** Twinkling sparkles from the site card, frozen, as an overlay (same positions per user). */
-export function sparklesDataUri(rarity: Rarity, login: string, w = 300, h = 420) {
+/** Twinkling sparkles from the site card, frozen, as an SVG overlay (same positions per user). */
+export function sparklesSvg(rarity: Rarity, login: string, w = 300, h = 420, glow = true): string {
   const count = rarity === "legacy" ? 9 : rarity === "gold" ? 6 : rarity === "silver" ? 3 : 0;
   const r = seeded(login);
   let body = "";
@@ -157,8 +157,13 @@ export function sparklesDataUri(rarity: Rarity, login: string, w = 300, h = 420)
     const x = 40 + r() * 220, y = 30 + r() * 320, size = 6 + r() * 10;
     r(); r(); // keep positions in step with the site's generator (delay, duration)
     const k = size / 20;
-    body += `<g transform="translate(${x.toFixed(1)} ${y.toFixed(1)}) scale(${k.toFixed(3)})"><path d="M10 0 C11 7 13 9 20 10 C13 11 11 13 10 20 C9 13 7 11 0 10 C7 9 9 7 10 0Z" fill="#fff" filter="url(#b)"/><path d="M10 0 C11 7 13 9 20 10 C13 11 11 13 10 20 C9 13 7 11 0 10 C7 9 9 7 10 0Z" fill="#fff"/></g>`;
+    const star = "M10 0 C11 7 13 9 20 10 C13 11 11 13 10 20 C9 13 7 11 0 10 C7 9 9 7 10 0Z";
+    body += `<g transform="translate(${x.toFixed(1)} ${y.toFixed(1)}) scale(${k.toFixed(3)})">${glow ? `<path d="${star}" fill="#fff" filter="url(#b)"/>` : `<circle cx="10" cy="10" r="6" fill="#fff" opacity="0.35"/>`}<path d="M10 0 C11 7 13 9 20 10 C13 11 11 13 10 20 C9 13 7 11 0 10 C7 9 9 7 10 0Z" fill="#fff"/></g>`;
   }
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 300 420"><defs><filter id="b" x="-1" y="-1" width="3" height="3"><feGaussianBlur stdDeviation="2.2"/></filter></defs>${body}</svg>`;
-  return `data:image/svg+xml;base64,${Buffer.from(svg).toString("base64")}`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 300 420"><defs><filter id="b" x="-1" y="-1" width="3" height="3"><feGaussianBlur stdDeviation="2.2"/></filter></defs>${body}</svg>`;
+}
+
+/** Server version: no blur filter (blur is the most expensive thing to rasterise on Workers). */
+export function sparklesDataUri(rarity: Rarity, login: string, w = 300, h = 420) {
+  return `data:image/svg+xml;base64,${Buffer.from(sparklesSvg(rarity, login, w, h, false)).toString("base64")}`;
 }

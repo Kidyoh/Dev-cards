@@ -27,7 +27,6 @@ async function loadFont(family: string, name: string, weight: 300 | 500 | 700 | 
 export function fonts(): Promise<Font[]> {
   if (!fontCache) {
     fontCache = Promise.all([
-      loadFont("Inter", "Inter", 500),
       loadFont("Inter", "Inter", 900),
       loadFont("Zilla+Slab", "Zilla Slab", 300),
       loadFont("IBM+Plex+Mono", "IBM Plex Mono", 500),
