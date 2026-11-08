@@ -22,7 +22,7 @@ function headers() {
   return {
     Authorization: `Bearer ${token()}`,
     "Content-Type": "application/json",
-    "User-Agent": "dev-cards",
+    "User-Agent": "specsheet",
     Accept: "application/vnd.github+json",
   };
 }

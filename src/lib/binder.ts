@@ -1,6 +1,6 @@
 // The binder is a per-browser collection of cards (no database). Wrapped in try/catch because
 // storage can be unavailable (private mode, blocked site data).
-const KEY = "devcards:binder";
+const KEY = "specsheet:binder";
 
 export function readBinder(): string[] {
   try {

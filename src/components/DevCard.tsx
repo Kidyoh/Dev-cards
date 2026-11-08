@@ -358,7 +358,7 @@ export function DevCard({
                   <div className="dc-slab-sub">
                     {(card.languages[0]?.name ?? "Developer").toUpperCase()} · {card.role.name.toUpperCase()}
                   </div>
-                  <div className="dc-slab-tier">DEV CARDS · LEGACY</div>
+                  <div className="dc-slab-tier">SPECSHEET · LEGACY</div>
                 </div>
                 <div className="dc-slab-grade">
                   <span>GRADE</span>

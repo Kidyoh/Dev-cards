@@ -1,10 +1,10 @@
 import type { GhRepo, GhUser } from "./github";
 
 /**
- * Demo mode (DEV_CARDS_DEMO=1): deterministic, made-up GitHub data per username so the app can be
- * run and designed without a GitHub token. Never used when DEV_CARDS_DEMO is unset.
+ * Demo mode (SPECSHEET_DEMO=1): deterministic, made-up GitHub data per username so the app can be
+ * run and designed without a GitHub token. Never used when SPECSHEET_DEMO is unset.
  */
-export const DEMO = process.env.DEV_CARDS_DEMO === "1";
+export const DEMO = process.env.SPECSHEET_DEMO === "1";
 
 function rng(seed: string) {
   let h = 2166136261;

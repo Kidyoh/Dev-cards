@@ -9,6 +9,8 @@ import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = { title: "Board" };
 
+export const dynamic = "force-dynamic";
+
 type Props = { searchParams: Promise<{ country?: string; stack?: string }> };
 
 function Opt({ href, active, children }: { href: string; active: boolean; children: React.ReactNode }) {
@@ -21,25 +23,31 @@ function Opt({ href, active, children }: { href: string; active: boolean; childr
 
 export default async function LeaderboardPage({ searchParams }: Props) {
   const sp = await searchParams;
-  const board: Board = sp.stack ? { kind: "stack", value: sp.stack } : { kind: "country", value: sp.country ?? "Nigeria" };
+  const board: Board = sp.stack ? { kind: "stack", value: sp.stack } : sp.country ? { kind: "country", value: sp.country } : { kind: "all" };
   let cards: CardData[] = [];
+  let source: "scanned" | "github" = "scanned";
   let error: unknown = null;
   try {
-    cards = await getBoard(board);
+    ({ cards, source } = await getBoard(board));
   } catch (e) {
     error = e;
   }
-  const on = (kind: Board["kind"], v: string) => board.kind === kind && board.value.toLowerCase() === v.toLowerCase();
+  const on = (kind: Board["kind"], v: string) => board.kind === kind && "value" in board && board.value.toLowerCase() === v.toLowerCase();
+  const title = board.kind === "all" ? "Top overall" : board.kind === "country" ? `Top in ${board.value}` : `Top ${board.value}`;
 
   return (
     <section className="px-4 pt-6 sm:px-6">
       <Label className="text-blue/60">Procedure · ranking</Label>
       <Headline className="mt-2 text-[clamp(44px,6.4vw,92px)]">The board.</Headline>
       <p className="mt-3 max-w-lg font-mono text-[11px] uppercase leading-relaxed text-blue">
-        The 15 most-followed developers in a country or stack, ranked by card. Refreshed every 6 hours.
+        Everyone scanned on Specsheet, ranked by card. Filter by country or main language.
       </p>
 
       <div className="mt-8 grid gap-3 border border-blue bg-white p-3 md:grid-cols-[90px_1fr]">
+        <Label className="pt-0.5">Scope</Label>
+        <div className="flex flex-wrap gap-1">
+          <Opt href="/leaderboard" active={board.kind === "all"}>All</Opt>
+        </div>
         <Label className="pt-0.5">Country</Label>
         <div className="flex flex-wrap gap-1">
           {COUNTRIES.map((c) => <Opt key={c} href={`/leaderboard?country=${encodeURIComponent(c)}`} active={on("country", c)}>{c}</Opt>)}
@@ -51,10 +59,17 @@ export default async function LeaderboardPage({ searchParams }: Props) {
       </div>
 
       <Headline as="h2" className="mt-12 text-[clamp(28px,3.4vw,44px)]">
-        {board.kind === "country" ? `Top in ${board.value}` : `Top ${board.value}`}
+        {title}
       </Headline>
+      {!error && (
+        <p className="mt-2 font-mono text-[10px] uppercase text-blue/70">
+          {source === "scanned"
+            ? `Ranked from ${cards.length} scanned developer${cards.length === 1 ? "" : "s"}`
+            : "Few scans here yet · seeded from GitHub's most-followed · every scan joins the board"}
+        </p>
+      )}
       {error ? <div className="mt-6"><ErrorBox error={error} /></div> : cards.length === 0 ? (
-        <p className="mt-6 font-mono text-[11px] uppercase text-blue">Nobody here yet.</p>
+        <p className="mt-6 font-mono text-[11px] uppercase text-blue">Nobody scanned yet. Scan someone to start the board.</p>
       ) : (
         <BoardList cards={cards} />
       )}

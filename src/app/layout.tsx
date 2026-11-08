@@ -12,7 +12,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl()),
-  title: { default: "Dev Cards", template: "%s · Dev Cards" },
+  title: { default: "Specsheet", template: "%s · Specsheet" },
   description: "Turn any GitHub profile into a collectible card, with stats computed from real commits, languages and shipped projects.",
 };
 
@@ -25,9 +25,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <main>{children}</main>
         </MotionProvider>
         <footer className="mx-4 mt-16 flex flex-wrap items-end justify-between gap-4 border-t border-blue/40 py-4 font-mono text-[10px] uppercase text-blue sm:mx-6">
-          <span>Dev Cards · Series 01</span>
+          <span>Specsheet · Series 01</span>
           <span className="text-blue/70">Public GitHub data · refreshed every 6h · no sign-in</span>
-          <Barcode value="dev-cards" />
+          <Barcode value="specsheet" />
         </footer>
       </body>
     </html>

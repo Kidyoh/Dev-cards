@@ -233,7 +233,7 @@ export function TopBar({ center }: { center?: ReactNode }) {
   return (
     <header className="relative z-20 grid grid-cols-[1fr_auto_1fr] items-start gap-4 px-4 pt-4 sm:px-6">
       <div className="flex flex-col gap-2">
-        <Link href="/" aria-label="Dev Cards home"><Tag>Dev Cards</Tag></Link>
+        <Link href="/" aria-label="Specsheet home"><Tag>Specsheet</Tag></Link>
         <nav className="flex flex-wrap gap-x-3 gap-y-1 font-mono text-[10px] uppercase text-blue">
           {LINKS.map((l) => {
             const active = l.href === "/" ? path === "/" : path.startsWith(l.href);

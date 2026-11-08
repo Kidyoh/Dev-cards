@@ -11,7 +11,7 @@ const FEATURED = ["sindresorhus", "gaearon", "torvalds", "yyx990803", "tj", "ken
 const RANK: Record<Rarity, number> = { legacy: 3, gold: 2, silver: 1, bronze: 0 };
 const KEYS: StatKey[] = ["SHP", "CON", "RNG", "DEP", "IMP", "COL"];
 
-export const revalidate = 21600;
+export const dynamic = "force-dynamic";
 
 function GridHand() {
   // line drawing for the INSTRUCTION window: a perspective grid and a pointer
@@ -136,7 +136,7 @@ export default async function Home() {
 
           <Win title="Not a social network — just cards" delay={400}>
             <p className="font-mono text-[10.5px] leading-snug text-blue">
-              Dev Cards reads your public commits, languages and shipped projects and prints a rated card. Your best
+              Specsheet reads your public commits, languages and shipped projects and prints a rated card. Your best
               repos become moves. Compare, collect, climb the board.
             </p>
             <div className="mt-2 flex gap-1.5 font-mono text-[9px] uppercase">

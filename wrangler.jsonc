@@ -1,0 +1,22 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "specsheet",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2026-10-15",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "assets": { "directory": ".open-next/assets", "binding": "ASSETS" },
+  "observability": { "enabled": true },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "specsheet",
+      "database_id": "REPLACE_WITH_D1_DATABASE_ID",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "vars": {
+    // Public URL, used for share links and Open Graph images. Change when the custom domain is live.
+    "SITE_URL": "https://specsheet.workers.dev"
+  }
+  // GITHUB_TOKEN is a secret: `npx wrangler secret put GITHUB_TOKEN` or Workers → Settings → Variables.
+}

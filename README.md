@@ -1,4 +1,4 @@
-# Dev Cards
+# Specsheet
 
 Turn any GitHub profile into a collectible, shareable card in the style of football and trading cards. Every
 number on the card is computed from real public GitHub data. There's no sign-in: just type a username.
@@ -53,19 +53,43 @@ All formulas are in `src/lib/stats.ts`.
 
 ```bash
 npm install
-cp .env.example .env.local   # add a GITHUB_TOKEN (public read access is enough)
+cp .env.example .env.local   # add GITHUB_TOKEN
 npm run dev
 ```
 
-The GitHub GraphQL API requires a token even for public data. The token is used only on the server. Cards are
-cached for 6 hours per user.
+**Demo mode:** `SPECSHEET_DEMO=1 npm run dev` uses made-up data and needs no token or database.
 
-**Demo mode:** run `DEV_CARDS_DEMO=1 npm run dev` to work on the UI without a token. Every username gets
-deterministic, made-up stats. Never set this in production.
+### GitHub token
+
+Use a fine-grained personal access token with **Repository access: Public repositories (read-only)** and no
+extra permissions. The token is only used on the server.
+
+## Deploying to Cloudflare
+
+Specsheet runs on Cloudflare Workers through [OpenNext](https://opennext.js.org/cloudflare), with a **D1**
+database that stores every scanned card. That database is both the 6-hour cache and the leaderboard.
+
+```bash
+npx wrangler login
+npx wrangler d1 create specsheet          # copy the database_id into wrangler.jsonc
+npm run db:migrate                         # creates the tables
+npx wrangler secret put GITHUB_TOKEN       # paste the token
+npm run deploy
+```
+
+To test the Worker locally: `cp .dev.vars.example .dev.vars`, then `npm run db:migrate:local && npm run preview`.
+
+**Leaderboards** rank everyone scanned on Specsheet, filtered by country (parsed from the GitHub location)
+or main language. A country or stack with fewer than 5 scans is seeded from GitHub's most-followed
+developers, and those scans then join the board.
+
+**Custom domain:** add the domain to Cloudflare, point its nameservers at Cloudflare at your registrar, then
+go to Workers → specsheet → Settings → Domains & Routes → Add custom domain. Update `SITE_URL` in
+`wrangler.jsonc`.
 
 ## Stack
 
-Next.js 15 (App Router), TypeScript, Tailwind v4 and `motion`. There's no database. Images are rendered with `next/og`,
+Next.js 15 (App Router), TypeScript, Tailwind v4 and `motion`, deployed on Cloudflare Workers + D1. There's no database. Images are rendered with `next/og`,
 and caching uses `unstable_cache`. Deploys to Vercel as-is: set `GITHUB_TOKEN` and `NEXT_PUBLIC_SITE_URL`.
 
 ## Layout

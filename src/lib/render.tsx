@@ -12,7 +12,7 @@ async function loadFont(family: string, name: string, weight: 300 | 500 | 700 | 
     const css = await (
       await fetch(`https://fonts.googleapis.com/css2?family=${family}:wght@${weight}&display=swap`, {
         // A non-browser UA makes Google Fonts serve one TTF file, which Satori can read (it can't read WOFF2).
-        headers: { "User-Agent": "dev-cards" },
+        headers: { "User-Agent": "specsheet" },
       })
     ).text();
     const url = css.match(/src: url\((.+?)\) format\('(?:truetype|opentype|woff)'\)/)?.[1];
@@ -117,7 +117,7 @@ export function Slab({ card, avatar, s }: { card: CardData; avatar: string | nul
         <div style={{ display: "flex", flexDirection: "column" }}>
           <div style={{ display: "flex", fontSize: px(14), fontWeight: 900 }}>{card.name.toUpperCase().slice(0, 24)}</div>
           <div style={{ display: "flex", fontSize: px(11), marginTop: px(2) }}>{`${(card.languages[0]?.name ?? "Developer").toUpperCase()} · ${card.role.name.toUpperCase()}`}</div>
-          <div style={{ display: "flex", fontSize: px(8), marginTop: px(8), letterSpacing: px(1), color: "#7a6326" }}>DEV CARDS · LEGACY</div>
+          <div style={{ display: "flex", fontSize: px(8), marginTop: px(8), letterSpacing: px(1), color: "#7a6326" }}>SPECSHEET · LEGACY</div>
         </div>
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", color: "#7a6326" }}>
           <div style={{ display: "flex", fontSize: px(8), letterSpacing: px(1) }}>GRADE</div>
@@ -155,7 +155,7 @@ export function OgImage({ card, avatar, site }: { card: CardData; avatar: string
       }}
     >
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 15, ...mono }}>
-        <div style={{ display: "flex", background: B, color: "#fff", padding: "2px 8px", fontFamily: "Zilla Slab", fontSize: 20 }}>DEV CARDS</div>
+        <div style={{ display: "flex", background: B, color: "#fff", padding: "2px 8px", fontFamily: "Zilla Slab", fontSize: 20 }}>SPECSHEET</div>
         <div style={{ display: "flex", border: `1px solid ${B}`, padding: "1px 8px" }}>{`Subject file / ${card.login}`}</div>
       </div>
       <div style={{ display: "flex", flex: 1, alignItems: "center" }}>
