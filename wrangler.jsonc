@@ -10,13 +10,13 @@
     {
       "binding": "DB",
       "database_name": "specsheet",
-      "database_id": "REPLACE_WITH_D1_DATABASE_ID",
+      "database_id": "5f26c970-b2b9-4a35-a52a-96c499f6f438",
       "migrations_dir": "migrations"
     }
   ],
   "vars": {
     // Public URL, used for share links and Open Graph images. Change when the custom domain is live.
-    "SITE_URL": "https://specsheet.workers.dev"
+    "SITE_URL": "https://specsheet.one-photo-a-day-backend.workers.dev"
   }
   // GITHUB_TOKEN is a secret: `npx wrangler secret put GITHUB_TOKEN` or Workers → Settings → Variables.
 }

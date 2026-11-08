@@ -11,7 +11,7 @@ function token(): string {
   const t = process.env.GITHUB_TOKEN;
   if (!t) {
     throw new GitHubError(
-      "GITHUB_TOKEN is not set. Add a GitHub personal access token to .env.local (see .env.example).",
+      "GITHUB_TOKEN is not set. Add it as a secret on the Worker (or in .env.local for local dev).",
       500,
     );
   }
