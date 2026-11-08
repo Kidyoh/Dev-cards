@@ -19,23 +19,24 @@ export function CardActions({ login, overall, url }: { login: string; overall: n
   useEffect(() => {
     const t = setTimeout(() => {
       fetchRetry(`/api/card/${login}/image?format=og`).catch(() => {});
-      fetchRetry(`/api/card/${login}/image?format=sheet`).catch(() => {});
+      fetchRetry(`/api/card/${login}/image?format=card`).catch(() => {});
     }, 1200);
     return () => clearTimeout(t);
   }, [login]);
 
+  const cardUrl = `/api/card/${login}/image?format=card`;
   const sheetUrl = `/api/card/${login}/image?format=sheet`;
-  async function download(e: React.MouseEvent<HTMLAnchorElement>) {
+  async function download(e: React.MouseEvent<HTMLAnchorElement>, url: string, name: string) {
     e.preventDefault();
     if (dl === "busy") return;
     setDl("busy");
     try {
-      const res = await fetchRetry(sheetUrl);
+      const res = await fetchRetry(url);
       if (!res.ok) throw new Error(String(res.status));
       const href = URL.createObjectURL(await res.blob());
       const a = document.createElement("a");
       a.href = href;
-      a.download = `${login}-specsheet.png`;
+      a.download = name;
       a.click();
       setTimeout(() => URL.revokeObjectURL(href), 5000);
       setDl("idle");
@@ -50,8 +51,11 @@ export function CardActions({ login, overall, url }: { login: string; overall: n
     <div className="space-y-2">
       <div className="flex flex-wrap gap-1.5">
         <a className={`${btn} bg-blue text-white hover:bg-blue-deep`} href={xUrl} target="_blank" rel="noopener noreferrer">Share on X ↗</a>
-        <a className={btn} href={sheetUrl} download={`${login}-specsheet.png`} onClick={download}>
-          {dl === "busy" ? "Rendering…" : dl === "error" ? "Retry PNG" : "Download PNG"}
+        <a className={btn} href={cardUrl} download={`${login}-card.png`} onClick={(e) => download(e, cardUrl, `${login}-card.png`)}>
+          {dl === "busy" ? "Rendering…" : dl === "error" ? "Retry PNG" : "Download card"}
+        </a>
+        <a className={btn} href={sheetUrl} download={`${login}-specsheet.png`} onClick={(e) => download(e, sheetUrl, `${login}-specsheet.png`)}>
+          Spec sheet
         </a>
         <button
           className={btn}

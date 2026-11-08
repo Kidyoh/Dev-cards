@@ -1,6 +1,6 @@
 /* Satori (next/og) renderers for the shareable PNGs. Satori needs display:flex on every element
    with more than one child and supports a subset of CSS, so this mirrors DevCard.tsx by hand. */
-import { RARITY, shieldDataUri } from "./theme";
+import { RARITY, shieldDataUri, sparklesDataUri } from "./theme";
 import type { CardData, StatKey } from "./types";
 
 type Font = { name: string; data: ArrayBuffer; weight: 300 | 400 | 500 | 700 | 800 | 900; style: "normal" };
@@ -64,7 +64,7 @@ export function CardFront({ card, avatar, s }: { card: CardData; avatar: string 
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={shieldDataUri(card.rarity, px(300), px(420))} width={px(300)} height={px(420)} style={{ position: "absolute", left: 0, top: 0 }} alt="" />
       <div style={{ position: "absolute", left: px(44), top: px(50), width: px(70), display: "flex", flexDirection: "column", alignItems: "center" }}>
-        <div style={{ display: "flex", fontSize: px(54), fontWeight: 900, lineHeight: 1, letterSpacing: px(-1.5) }}>{card.overall}</div>
+        <div style={{ display: "flex", fontSize: px(54), fontWeight: 900, lineHeight: 1, letterSpacing: px(-1.5), textShadow: `0 ${px(2)}px ${px(4)}px rgba(0,0,0,0.18)` }}>{card.overall}</div>
         <div style={{ display: "flex", fontSize: px(18), fontWeight: 900, marginTop: px(2) }}>{card.role.code}</div>
         <div style={{ display: "flex", alignItems: "center", marginTop: px(10), fontSize: px(10), fontWeight: 900, textTransform: "uppercase" }}>
           <div style={{ display: "flex", width: px(8), height: px(8), borderRadius: px(8), background: card.element.color, marginRight: px(4) }} />
@@ -75,7 +75,7 @@ export function CardFront({ card, avatar, s }: { card: CardData; avatar: string 
       {avatar ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={avatar} width={px(142)} height={px(142)} alt=""
-          style={{ position: "absolute", left: px(118), top: px(46), borderRadius: px(142), border: `${px(3)}px solid ${t.trim}`, objectFit: "cover" }} />
+          style={{ position: "absolute", left: px(118), top: px(46), borderRadius: px(142), border: `${px(3)}px solid ${t.trim}`, objectFit: "cover", boxShadow: `0 ${px(6)}px ${px(14)}px rgba(0,0,0,0.3)` }} />
       ) : (
         <div style={{ position: "absolute", left: px(118), top: px(46), width: px(142), height: px(142), borderRadius: px(142), border: `${px(3)}px solid ${t.trim}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: px(64), fontWeight: 900, background: "rgba(0,0,0,0.08)" }}>
           {card.login.charAt(0).toUpperCase()}
@@ -104,6 +104,8 @@ export function CardFront({ card, avatar, s }: { card: CardData; avatar: string 
       <div style={{ position: "absolute", left: px(40), width: px(220), top: px(358), display: "flex", justifyContent: "center", fontSize: px(11), color: t.sub }}>
         {`@${card.login}`}
       </div>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={sparklesDataUri(card.rarity, card.login, px(300), px(420))} width={px(300)} height={px(420)} style={{ position: "absolute", left: 0, top: 0 }} alt="" />
     </div>
   );
 }
@@ -133,6 +135,29 @@ export function Slab({ card, avatar, s }: { card: CardData; avatar: string | nul
 
 export function CardOrSlab(props: { card: CardData; avatar: string | null; s: number }) {
   return props.card.rarity === "legacy" ? <Slab {...props} /> : <CardFront {...props} />;
+}
+
+/** The downloadable card: the card on a transparent canvas with a soft floor shadow, like on the site. */
+export function CardShot({ card, avatar, s }: { card: CardData; avatar: string | null; s: number }) {
+  const size = cardSize(card, s);
+  const pad = 36 * s;
+  const shadow = `data:image/svg+xml;base64,${Buffer.from(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${size.width}" height="${60 * s}"><defs><filter id="f" x="-0.5" y="-2" width="2" height="5"><feGaussianBlur stdDeviation="${9 * s}"/></filter></defs><ellipse cx="${size.width / 2}" cy="${30 * s}" rx="${size.width * 0.4}" ry="${11 * s}" fill="#000" opacity="0.45" filter="url(#f)"/></svg>`,
+  ).toString("base64")}`;
+  return (
+    <div style={{ display: "flex", position: "relative", width: size.width + pad * 2, height: size.height + pad * 2 }}>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={shadow} width={size.width} height={60 * s} style={{ position: "absolute", left: pad, top: pad + size.height - 34 * s }} alt="" />
+      <div style={{ display: "flex", position: "absolute", left: pad, top: pad }}>
+        <CardOrSlab card={card} avatar={avatar} s={s} />
+      </div>
+    </div>
+  );
+}
+
+export function cardShotSize(card: CardData, s: number) {
+  const size = cardSize(card, s);
+  return { width: size.width + 72 * s, height: size.height + 72 * s };
 }
 
 export function cardSize(card: CardData, s: number) {

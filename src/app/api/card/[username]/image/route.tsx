@@ -1,7 +1,7 @@
 import { ImageResponse } from "next/og";
 import { getCard } from "@/lib/cards";
 import { GitHubError } from "@/lib/github";
-import { avatarDataUri, CardOrSlab, cardSize, fonts, OgImage } from "@/lib/render";
+import { avatarDataUri, CardShot, cardShotSize, fonts, OgImage } from "@/lib/render";
 import { POSTER, SpecPoster } from "@/lib/poster";
 import { siteUrl } from "@/lib/site";
 
@@ -32,9 +32,9 @@ export async function GET(req: Request, ctx: { params: Promise<{ username: strin
 
 async function render(req: Request, { params }: { params: Promise<{ username: string }> }): Promise<Response> {
   const { username } = await params;
-  // sheet (default): the full spec-sheet poster · og: 1200×630 social preview · card: the bare card
+  // card (default): the card itself, full artwork · og: 1200×630 social preview · sheet: spec-sheet poster
   const f = new URL(req.url).searchParams.get("format");
-  const format = f === "og" || f === "card" ? f : "sheet";
+  const format = f === "og" || f === "sheet" ? f : "card";
   try {
     const card = await getCard(username);
     const [avatar, loaded] = await Promise.all([avatarDataUri(card.avatarUrl), fonts()]);
@@ -53,15 +53,7 @@ async function render(req: Request, { params }: { params: Promise<{ username: st
       return new ImageResponse(<SpecPoster card={card} avatar={avatar} site={siteUrl()} />, { ...POSTER, fonts: fontList, headers });
     }
     const s = 2;
-    const size = cardSize(card, s);
-    return new ImageResponse(
-      (
-        <div style={{ display: "flex", width: size.width, height: size.height }}>
-          <CardOrSlab card={card} avatar={avatar} s={s} />
-        </div>
-      ),
-      { ...size, fonts: fontList, headers },
-    );
+    return new ImageResponse(<CardShot card={card} avatar={avatar} s={s} />, { ...cardShotSize(card, s), fonts: fontList, headers });
   } catch (e) {
     const status = e instanceof GitHubError ? e.status : 500;
     return new Response(e instanceof GitHubError ? e.message : "Could not render card", { status });
