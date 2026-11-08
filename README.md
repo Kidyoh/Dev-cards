@@ -21,26 +21,19 @@ number on the card is computed from real public GitHub data. There's no sign-in:
 
 ## Design
 
-The look is editorial with a technical HUD layer: rounded sheets on warm paper, alternating light and ink,
-Space Grotesk headlines, JetBrains Mono labels, and lime and orange signal colors. On top of that sit HUD
-callouts, windowed readout panels, barcodes, a blueprint grid, and pixel-based motion.
+Blueprint HUD: a white page with a fine ultramarine grid, a light Zilla Slab headline, and IBM Plex Mono
+labels. The UI is built from hairline window panels with solid blue title bars, filled tags, `[BRACKET]`
+lists with dithered pixel fills, cell meters, vertical meters, a barcode, a wireframe globe, local time,
+and a measurement axis.
 
-- **Scan reveal:** on a card page, the card's own PNG is sampled into a dot cloud that assembles top to
-  bottom behind a lime scan line, resolves from chunky pixels to sharp, then swaps to the live 3D card. Hairline
-  callouts then draw out to its rating, subject, stats and ability. Tap to skip; "Rescan" replays it.
-- **Hero:** a featured card shown as an interactive dot matrix (Aceternity `PixelatedCanvas`) that scatters
-  under the pointer, with HUD tags. "Change view" swaps it for the live card.
-- **Pixel motion:** headings rez in through blocks that blink out, stat bars fill segment by segment, and
-  labels decode from scrambled characters (Aceternity `EncryptedText`).
-- **3D card:** a spring tilt with layered depth, pointer glare and rarity foils. The "how it works" stack uses
-  the Aceternity 3D card, so its layers pop apart on hover.
-- **Compare:** player 1 in lime, player 2 in orange, with mirrored segment bars, a two-player radar and a verdict.
-- **Leaderboards:** a top-3 podium, a lineup list, and a card preview that follows the pointer.
-- **Reduced motion:** with the OS setting on, scans are skipped and motion is made instant.
+- **Hero subject:** a 3D blue point cloud of the featured card (shield, rating and name raised in depth, with
+  an orbiting ribbon). It assembles from scattered points, rotates with the pointer, and scatters where you hover.
+- **Windows open in pixel steps**, cell meters switch on one at a time, and dithered bars print left to right.
+- **Card page:** the card sits in the center with blue hairline callouts, readout, overall and language windows
+  on the right, and identity, actions and abilities on the left.
+- **Reduced motion** is respected.
 
-UI: Tailwind v4, shadcn/ui (button, badge, input, separator, tooltip) and Aceternity UI (pixelated-canvas,
-encrypted-text, dotted-glow-background, 3d-card, infinite-moving-cards, animated-tooltip), with `motion`
-for animation. Fonts are self-hosted via Fontsource.
+UI: Tailwind v4 and `motion`, with fonts self-hosted via Fontsource (Zilla Slab, IBM Plex Sans, IBM Plex Mono).
 
 ## Stats
 
@@ -72,7 +65,7 @@ deterministic, made-up stats. Never set this in production.
 
 ## Stack
 
-Next.js 15 (App Router), TypeScript, Tailwind v4, shadcn/ui, Aceternity UI and `motion`. There's no database. Images are rendered with `next/og`,
+Next.js 15 (App Router), TypeScript, Tailwind v4 and `motion`. There's no database. Images are rendered with `next/og`,
 and caching uses `unstable_cache`. Deploys to Vercel as-is: set `GITHUB_TOKEN` and `NEXT_PUBLIC_SITE_URL`.
 
 ## Layout
@@ -83,7 +76,6 @@ src/lib/stats.ts      scoring: stats, overall, rarity, moves, abilities
 src/lib/cards.ts      cached card + leaderboard loaders
 src/lib/render.tsx    PNG renderers (card, slab, OG image)
 src/lib/demo.ts       demo-mode fake data
-src/components/       DevCard, Materialize (scan reveal), CardHud, HeroScan, hud.tsx (HUD kit)
-src/components/ui/    shadcn + Aceternity components
+src/components/       DevCard, PointCloud, Callouts, bp.tsx (blueprint HUD kit), pages' client parts
 src/app/              pages: /, /u/[username], /compare, /leaderboard, /binder, /api/card/...
 ```

@@ -3,11 +3,11 @@
 import { RARITY, shieldDataUri } from "./theme";
 import type { CardData, StatKey } from "./types";
 
-type Font = { name: string; data: ArrayBuffer; weight: 400 | 500 | 700 | 800 | 900; style: "normal" };
+type Font = { name: string; data: ArrayBuffer; weight: 300 | 400 | 500 | 700 | 800 | 900; style: "normal" };
 
 let fontCache: Promise<Font[]> | null = null;
 
-async function loadFont(family: string, name: string, weight: 500 | 700 | 900): Promise<Font | null> {
+async function loadFont(family: string, name: string, weight: 300 | 500 | 700 | 900): Promise<Font | null> {
   try {
     const css = await (
       await fetch(`https://fonts.googleapis.com/css2?family=${family}:wght@${weight}&display=swap`, {
@@ -29,8 +29,8 @@ export function fonts(): Promise<Font[]> {
     fontCache = Promise.all([
       loadFont("Inter", "Inter", 500),
       loadFont("Inter", "Inter", 900),
-      loadFont("Space+Grotesk", "Space Grotesk", 700),
-      loadFont("JetBrains+Mono", "JetBrains Mono", 500),
+      loadFont("Zilla+Slab", "Zilla Slab", 300),
+      loadFont("IBM+Plex+Mono", "IBM Plex Mono", 500),
     ]).then((f) => f.filter((x): x is Font => !!x));
     fontCache.then((f) => {
       if (!f.length) fontCache = null; // retry next time if the network failed
@@ -139,49 +139,51 @@ export function cardSize(card: CardData, s: number) {
   return card.rarity === "legacy" ? { width: 340 * s, height: 530 * s } : { width: 300 * s, height: 420 * s };
 }
 
-/** 1200x630 social image in the site's HUD style: ink sheet, card left, readout right. */
+/** 1200x630 social image in the blueprint style: white paper, ultramarine hairlines. */
 export function OgImage({ card, avatar, site }: { card: CardData; avatar: string | null; site: string }) {
   const s = card.rarity === "legacy" ? 1.0 : 1.28;
   const keys: StatKey[] = ["SHP", "CON", "RNG", "DEP", "IMP", "COL"];
-  const mono = { fontFamily: "JetBrains Mono", textTransform: "uppercase" as const, letterSpacing: 3 };
+  const B = "#2f3fc2";
+  const mono = { fontFamily: "IBM Plex Mono", textTransform: "uppercase" as const };
   return (
-    <div style={{ display: "flex", flexDirection: "column", width: 1200, height: 630, background: "#121311", color: "#f6f6f1", fontFamily: "Inter", padding: "34px 54px" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14, color: "rgba(246,246,241,0.45)", ...mono }}>
-        <div style={{ display: "flex" }}>Dev Cards / Series 01</div>
-        <div style={{ display: "flex" }}>{`Card / ${card.login}`}</div>
+    <div
+      style={{
+        display: "flex", flexDirection: "column", width: 1200, height: 630, padding: "28px 44px", color: B, fontFamily: "Inter",
+        backgroundColor: "#fcfcfe",
+        backgroundImage: "linear-gradient(to right, rgba(47,63,194,0.1) 1px, transparent 1px), linear-gradient(to bottom, rgba(47,63,194,0.1) 1px, transparent 1px)",
+        backgroundSize: "40px 40px",
+      }}
+    >
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 15, ...mono }}>
+        <div style={{ display: "flex", background: B, color: "#fff", padding: "2px 8px", fontFamily: "Zilla Slab", fontSize: 20 }}>DEV CARDS</div>
+        <div style={{ display: "flex", border: `1px solid ${B}`, padding: "1px 8px" }}>{`Subject file / ${card.login}`}</div>
       </div>
       <div style={{ display: "flex", flex: 1, alignItems: "center" }}>
+        <div style={{ display: "flex", flexDirection: "column", flex: 1 }}>
+          <div style={{ display: "flex", fontFamily: "Zilla Slab", fontSize: 84, lineHeight: 0.95, textTransform: "uppercase" }}>{card.name.slice(0, 16)}</div>
+          <div style={{ display: "flex", fontSize: 18, marginTop: 14, ...mono }}>{`${card.overall} OVR · ${card.rarity} · ${card.role.name} · @${card.login}`}</div>
+          <div style={{ display: "flex", flexDirection: "column", marginTop: 28, border: `1px solid ${B}`, background: "#fff", width: 520 }}>
+            <div style={{ display: "flex", background: B, color: "#fff", padding: "2px 8px", fontSize: 13, ...mono }}>Readout · 12 months</div>
+            <div style={{ display: "flex", flexDirection: "column", padding: "10px 12px" }}>
+              {keys.map((k) => (
+                <div key={k} style={{ display: "flex", alignItems: "center", marginBottom: 6 }}>
+                  <div style={{ display: "flex", width: 54, fontSize: 15, ...mono }}>{k}</div>
+                  {Array.from({ length: 22 }, (_, i) => (
+                    <div key={i} style={{ display: "flex", width: 15, height: 13, marginRight: 2, border: `1px solid ${B}`, background: i < Math.round((card.stats[k] / 100) * 22) ? B : "transparent" }} />
+                  ))}
+                  <div style={{ display: "flex", marginLeft: 10, fontSize: 17, ...mono }}>{card.stats[k]}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
         <div style={{ display: "flex", width: 470, justifyContent: "center" }}>
           <CardOrSlab card={card} avatar={avatar} s={s} />
         </div>
-        <div style={{ display: "flex", flexDirection: "column", flex: 1, paddingLeft: 30 }}>
-          <div style={{ display: "flex", alignItems: "center", fontSize: 16, ...mono }}>
-            <div style={{ display: "flex", background: "#d4f53c", color: "#121311", padding: "4px 10px", borderRadius: 6, marginRight: 14 }}>{card.rarity}</div>
-            <div style={{ display: "flex", color: "rgba(246,246,241,0.6)" }}>{`${card.element.name} type · ${card.role.name}`}</div>
-          </div>
-          <div style={{ display: "flex", fontFamily: "Space Grotesk", fontSize: 76, lineHeight: 1, marginTop: 18, letterSpacing: -3 }}>{card.name.slice(0, 20)}</div>
-          <div style={{ display: "flex", alignItems: "baseline", marginTop: 12 }}>
-            <div style={{ display: "flex", fontFamily: "Space Grotesk", fontSize: 54, color: "#d4f53c" }}>{card.overall}</div>
-            <div style={{ display: "flex", fontSize: 22, color: "rgba(246,246,241,0.55)", marginLeft: 12 }}>{`overall · @${card.login}`}</div>
-          </div>
-          <div style={{ display: "flex", flexDirection: "column", marginTop: 26 }}>
-            {keys.map((k) => (
-              <div key={k} style={{ display: "flex", alignItems: "center", marginBottom: 10 }}>
-                <div style={{ display: "flex", width: 64, fontSize: 16, color: "rgba(246,246,241,0.6)", ...mono }}>{k}</div>
-                <div style={{ display: "flex" }}>
-                  {Array.from({ length: 24 }, (_, i) => (
-                    <div key={i} style={{ display: "flex", width: 12, height: 12, marginRight: 3, borderRadius: 1, background: i < Math.round((card.stats[k] / 100) * 24) ? "#d4f53c" : "rgba(246,246,241,0.1)" }} />
-                  ))}
-                </div>
-                <div style={{ display: "flex", marginLeft: 14, fontFamily: "Space Grotesk", fontSize: 24 }}>{card.stats[k]}</div>
-              </div>
-            ))}
-          </div>
-        </div>
       </div>
-      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14, color: "rgba(246,246,241,0.45)", ...mono }}>
-        <div style={{ display: "flex", color: "#d4f53c" }}>{`${site.replace(/^https?:\/\//, "")}/u/${card.login}`}</div>
-        <div style={{ display: "flex" }}>{card.moves[0] ? `Signature move · ${card.moves[0].name} ${card.moves[0].power}` : "Scan · Rate · Collect"}</div>
+      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14, borderTop: `1px solid ${B}`, paddingTop: 8, ...mono }}>
+        <div style={{ display: "flex" }}>{`${site.replace(/^https?:\/\//, "")}/u/${card.login}`}</div>
+        <div style={{ display: "flex" }}>{card.moves[0] ? `Move_01 · ${card.moves[0].name} · ${card.moves[0].power}` : "Scan · rate · collect"}</div>
       </div>
     </div>
   );

@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import { readBinder, removeFromBinder } from "@/lib/binder";
 import type { CardData } from "@/lib/types";
 import { DevCard } from "./DevCard";
-import { ScanForm } from "./ScanForm";
+import { ScanInput } from "./ScanInput";
 
 export function Binder() {
   const [logins, setLogins] = useState<string[] | null>(null);
@@ -29,9 +29,9 @@ export function Binder() {
   if (logins === null) return null;
   if (logins.length === 0) {
     return (
-      <div className="mt-10 flex flex-col gap-5 rounded-3xl border border-dashed border-ink/25 p-8">
-        <p className="text-lg">Your binder is empty. Look someone up and hit <b>Add to binder</b>.</p>
-        <ScanForm tone="light" cta="Find a card" />
+      <div className="mt-8 flex max-w-md flex-col gap-3 border border-dashed border-blue p-4">
+        <p className="font-mono text-[11px] uppercase text-blue">Binder empty. Scan someone and hit + Binder.</p>
+        <ScanInput />
       </div>
     );
   }
@@ -46,17 +46,17 @@ export function Binder() {
 
   return (
     <>
-      <div className="mt-10 flex flex-wrap items-center justify-between gap-4 border-y border-line py-4">
-        <span className="font-mono text-[11px] uppercase tracking-[0.2em] text-mute">
+      <div className="mt-8 flex flex-wrap items-center justify-between gap-4 border-y border-blue/40 py-2">
+        <span className="font-mono text-[10.5px] uppercase text-blue">
           {logins.length} card{logins.length === 1 ? "" : "s"} · pick two to compare
         </span>
         {pick.length === 2 && (
-          <Link className="rounded-full bg-ink px-5 py-2.5 text-sm font-semibold text-lime" href={`/compare?a=${pick[0]}&b=${pick[1]}`}>
+          <Link className="bg-blue px-2 py-1 font-mono text-[11px] font-semibold uppercase text-white" href={`/compare?a=${pick[0]}&b=${pick[1]}`}>
             Compare {pick[0]} vs {pick[1]} →
           </Link>
         )}
       </div>
-      <div className="focus-grid mt-10 grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] justify-items-center gap-8">
+      <div className="focus-grid mt-8 grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] justify-items-center gap-8">
         <AnimatePresence>
         {sorted.map((l, i) => {
           const c = cards[l];
@@ -70,16 +70,16 @@ export function Binder() {
               exit={{ opacity: 0, scale: 0.6, rotate: 12, transition: { duration: 0.3 } }}
               transition={{ type: "spring", stiffness: 140, damping: 16, delay: i * 0.05 }}
             >
-              {c === undefined && <div className="grid h-[294px] w-[210px] place-items-center rounded-2xl border border-dashed border-ink/20 font-mono text-[10px] uppercase tracking-[0.2em] text-mute">Scanning @{l}</div>}
-              {c === "error" && <div className="grid h-[294px] w-[210px] place-items-center rounded-2xl border border-dashed border-ink/20 font-mono text-[10px] uppercase tracking-[0.2em] text-mute">Couldn&apos;t load @{l}</div>}
+              {c === undefined && <div className="grid h-[294px] w-[210px] place-items-center border border-dashed border-blue font-mono text-[10px] uppercase text-blue">Scanning @{l}</div>}
+              {c === "error" && <div className="grid h-[294px] w-[210px] place-items-center border border-dashed border-blue font-mono text-[10px] uppercase text-blue">Couldn&apos;t load @{l}</div>}
               {typeof c === "object" && (
                 <Link href={`/u/${c.login}`}><DevCard card={c} scale={0.7} flippable={false} slab={false} /></Link>
               )}
-              <div className="flex gap-2 font-mono text-[11px] uppercase tracking-[0.12em]">
-                <button className={`rounded-full border px-3 py-1.5 ${pick.includes(l) ? "border-ink bg-ink text-lime" : "border-ink/20 bg-white"}`} onClick={() => toggle(l)}>
+              <div className="flex gap-1.5 font-mono text-[10.5px] uppercase">
+                <button className={`border border-blue px-2 py-0.5 ${pick.includes(l) ? "bg-blue text-white" : "bg-white text-blue"}`} onClick={() => toggle(l)}>
                   {pick.includes(l) ? "✓ Picked" : "Pick"}
                 </button>
-                <button className="rounded-full border border-ink/20 bg-white px-3 py-1.5 hover:border-ink"
+                <button className="border border-blue bg-white px-2 py-0.5 text-blue hover:bg-blue hover:text-white"
                   onClick={() => { removeFromBinder(l); setLogins((x) => x?.filter((y) => y !== l) ?? []); setPick((p) => p.filter((y) => y !== l)); }}>
                   Remove
                 </button>

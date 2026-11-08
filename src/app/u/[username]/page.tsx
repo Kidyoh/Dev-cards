@@ -1,18 +1,18 @@
 import type { Metadata } from "next";
-import { ArrowUpRight } from "lucide-react";
 import { notFound } from "next/navigation";
+import { Barcode, Bracket, Cells, Headline, Label, Spark, Tag, VMeters, Win } from "@/components/bp";
 import { CardActions } from "@/components/CardActions";
+import { Callouts } from "@/components/Callouts";
+import { DevCard } from "@/components/DevCard";
 import { ErrorBox } from "@/components/ErrorBox";
-import { Barcode, Bracket, Eyebrow, HudPanel, PixelReveal, SegBar, Sheet } from "@/components/hud";
-import { Materialize } from "@/components/Materialize";
-import { StatBars, StatRadar } from "@/components/StatPanel";
 import { getCard } from "@/lib/cards";
 import { GitHubError } from "@/lib/github";
 import { siteUrl } from "@/lib/site";
 import { RARITY } from "@/lib/theme";
-import type { CardData } from "@/lib/types";
+import { STAT_LABELS, type CardData, type StatKey } from "@/lib/types";
 
 type Props = { params: Promise<{ username: string }> };
+const KEYS: StatKey[] = ["SHP", "CON", "RNG", "DEP", "IMP", "COL"];
 
 async function load(username: string): Promise<{ card?: CardData; error?: unknown }> {
   try {
@@ -38,23 +38,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-const TIER_BADGE: Record<CardData["rarity"], string> = {
-  bronze: "bg-[#6a3c18] text-[#f3c79a]",
-  silver: "bg-[#5d6672] text-white",
-  gold: "bg-ink text-lime",
-  legacy: "bg-lime text-ink",
-};
-
 export default async function CardPage({ params }: Props) {
   const { username } = await params;
   const { card, error } = await load(username);
-  if (!card) {
-    return (
-      <Sheet>
-        <ErrorBox error={error} />
-      </Sheet>
-    );
-  }
+  if (!card) return <div className="mx-4 mt-10 sm:mx-6"><ErrorBox error={error} /></div>;
 
   const url = `${siteUrl()}/u/${card.login}`;
   const facts: [string, number][] = [
@@ -72,145 +59,120 @@ export default async function CardPage({ params }: Props) {
 
   return (
     <>
-      <Sheet tone="light" className="blueprint" inner="pt-10 md:pt-14">
-        <div className="flex items-center justify-between font-mono text-[10px] uppercase tracking-[0.2em] text-mute">
-          <span>Card / {card.login}</span>
-          <span className="hidden sm:block">{card.location ?? "Earth"}</span>
-          <Barcode value={card.login} className="h-4 text-ink/60" />
-        </div>
-
-        <div className="mt-10 grid grid-cols-1 items-start gap-12 lg:grid-cols-[400px_1fr] xl:grid-cols-[580px_1fr]">
-          <div className="flex min-w-0 justify-center lg:sticky lg:top-28">
-            <Materialize card={card} />
-          </div>
-
-          <div className="min-w-0">
-            <Eyebrow>{`${card.element.name} type · ${card.role.name}`}</Eyebrow>
-            <PixelReveal cols={18} rows={3}>
-              <h1 className="mt-4 break-words text-[clamp(44px,6.5vw,84px)] font-bold leading-[0.92]">{card.name}</h1>
-            </PixelReveal>
-            <div className="mt-5 flex flex-wrap items-center gap-3">
-              <span className={`rounded-md px-2 py-1 font-mono text-[11px] font-bold uppercase tracking-[0.08em] ${TIER_BADGE[card.rarity]}`}>
-                {RARITY[card.rarity].label}
-              </span>
-              <span className="font-display text-2xl font-bold">{card.overall}</span>
-              <span className="text-mute">overall</span>
-              <a
-                href={`https://github.com/${card.login}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 font-mono text-sm underline decoration-ink/25 underline-offset-4 hover:decoration-ink"
-              >
-                @{card.login} <ArrowUpRight className="size-3.5" />
-              </a>
-            </div>
-
-            <div className="mt-8">
-              <CardActions login={card.login} overall={card.overall} name={card.name} url={url} />
-            </div>
-
-            <div className="mt-10 overflow-hidden rounded-3xl border border-line bg-white">
-              <div className="flex items-center justify-between border-b border-line px-6 py-3">
-                <Bracket>Stat readout</Bracket>
-                <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-mute">Last 12 months</span>
-              </div>
-              <div className="grid items-center gap-6 p-6 2xl:grid-cols-[200px_1fr]">
-                <div className="mx-auto w-[200px] text-ink"><StatRadar cards={[card]} /></div>
-                <StatBars card={card} />
-              </div>
-              {card.languages.length > 0 && (
-                <div className="border-t border-line px-6 py-5">
-                  <div className="mb-3 font-mono text-[10px] uppercase tracking-[0.2em] text-mute">Languages</div>
-                  <div className="flex h-3 gap-[2px] overflow-hidden rounded-sm">
-                    {card.languages.map((l) => (
-                      <i key={l.name} style={{ width: `${l.share * 100}%`, background: l.color ?? "#777" }} title={l.name} />
-                    ))}
-                  </div>
-                  <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 font-mono text-[11px] text-mute">
-                    {card.languages.map((l) => (
-                      <span key={l.name} className="inline-flex items-center gap-1.5">
-                        <i className="inline-block size-2 rounded-[1px]" style={{ background: l.color ?? "#777" }} />
-                        {l.name} {Math.round(l.share * 100)}%
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      </Sheet>
-
-      <Sheet tone="dark" backdrop={<div className="blueprint-dark absolute inset-0" />}>
-        <div className="relative grid gap-12 lg:grid-cols-[1fr_1.4fr]">
+      <section className="grid gap-10 px-4 pt-6 sm:px-6 xl:grid-cols-[260px_1fr_250px]">
+        {/* left: identity */}
+        <div className="flex flex-col gap-5">
           <div>
-            <Eyebrow className="text-white">Moveset</Eyebrow>
-            <h2 className="mt-4 text-[clamp(36px,5vw,64px)] font-bold leading-[0.95]">
-              Signature <span className="text-lime">moves.</span>
-            </h2>
-            <p className="mt-5 max-w-sm text-white/60">
-              Top repos by stars, forks, releases, lifespan and whether they&apos;re live. Power is out of 250.
-            </p>
-            <div className="mt-10 rounded-2xl border border-line-dark p-6">
-              <div className="font-mono text-[10px] uppercase tracking-[0.2em] text-white/45">Abilities</div>
-              <ol className="mt-4 space-y-3">
-                {card.abilities.map((a, i) => (
-                  <li key={a.name} className="grid grid-cols-[28px_1fr] gap-2 text-sm">
-                    <span className="font-mono text-lime">0{i + 1}</span>
-                    <span>
-                      <b className="font-semibold">{a.name}.</b> <span className="text-white/60">{a.description}</span>
-                    </span>
-                  </li>
-                ))}
-              </ol>
-            </div>
+            <Label className="text-blue/60">Subject file / {card.login}</Label>
+            <Headline className="mt-2 break-words text-[clamp(40px,4.6vw,64px)]">{card.name}</Headline>
           </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <Tag>{RARITY[card.rarity].label}</Tag>
+            <span className="font-mono text-[11px] uppercase text-blue">{card.overall} OVR · {card.role.name} · {card.element.name}</span>
+          </div>
+          <a href={`https://github.com/${card.login}`} target="_blank" rel="noopener noreferrer" className="font-mono text-[11px] uppercase text-blue underline underline-offset-2">
+            github.com/{card.login} ↗
+          </a>
+          <CardActions login={card.login} overall={card.overall} url={url} />
+          <Win title="Abilities" delay={150}>
+            <ol className="space-y-1.5 font-mono text-[10.5px] text-blue">
+              {card.abilities.map((a, i) => (
+                <li key={a.name}><span className="text-blue/60">0{i + 1}.</span> <b className="uppercase">{a.name}</b> — {a.description}</li>
+              ))}
+            </ol>
+          </Win>
+        </div>
 
-          <div className="grid gap-3">
-            {card.moves.length === 0 && <p className="text-white/60">No public projects yet.</p>}
-            {card.moves.map((m, i) => (
-              <a
-                key={m.name}
-                href={m.homepage ?? m.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="group grid gap-4 rounded-2xl border border-line-dark bg-ink-2 p-6 transition-colors hover:border-lime/60 sm:grid-cols-[1fr_auto]"
-              >
-                <div className="min-w-0">
-                  <div className="flex items-center gap-3 font-mono text-[10px] uppercase tracking-[0.2em] text-white/45">
-                    <span>Move_0{i + 1}</span>
-                    {m.deployed && <span className="rounded-sm bg-lime px-1.5 py-0.5 font-bold text-ink">Live</span>}
-                  </div>
-                  <div className="mt-3 flex items-center gap-2">
-                    <span className="size-2.5 rounded-[2px]" style={{ background: m.languageColor ?? "#777" }} />
-                    <span className="truncate font-display text-2xl font-semibold">{m.name}</span>
-                    <ArrowUpRight className="size-4 shrink-0 opacity-0 transition-opacity group-hover:opacity-100" />
-                  </div>
-                  <p className="mt-2 text-sm text-white/55">{m.description}</p>
-                  <div className="mt-3 font-mono text-[11px] text-white/45">
-                    {m.language ?? "—"} · ★ {m.stars.toLocaleString()}
-                  </div>
-                </div>
-                <div className="flex flex-col items-start gap-2 sm:items-end">
-                  <span className="font-display text-5xl font-bold text-lime tabular-nums">{m.power}</span>
-                  <SegBar value={(m.power / 250) * 100} segments={12} color="var(--color-lime)" track="rgb(246 246 241 / 0.1)" className="h-1.5 w-28" />
-                </div>
-              </a>
-            ))}
+        {/* center: the card */}
+        <div className="flex flex-col items-center gap-3">
+          <Callouts card={card}>
+            <DevCard card={card} idle countUp />
+          </Callouts>
+          <div className="flex w-full max-w-[340px] justify-between font-mono text-[9px] uppercase text-blue/70">
+            <span>Drag to tilt · click to flip</span>
+            <Barcode value={card.login} className="h-3 w-16" />
           </div>
         </div>
 
-        <div className="relative mt-16 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-          {facts.map(([label, v]) => (
-            <HudPanel key={label} title={label} tone="dark" className="border-line-dark">
-              <span className="font-display text-3xl font-bold tabular-nums">{v.toLocaleString()}</span>
-            </HudPanel>
+        {/* right: readouts */}
+        <div className="flex flex-col gap-4">
+          <Win title="Readout · 12 months" delay={100}>
+            <div className="space-y-2">
+              {KEYS.map((k, i) => (
+                <div key={k}>
+                  <div className="flex justify-between font-mono text-[9.5px] uppercase text-blue">
+                    <span>{k} · {STAT_LABELS[k]}</span>
+                    <b>{card.stats[k]}</b>
+                  </div>
+                  <Cells value={card.stats[k]} count={18} className="mt-0.5 h-2.5" delay={0.2 + i * 0.08} />
+                </div>
+              ))}
+            </div>
+          </Win>
+          <Win title="Overall" delay={200}>
+            <div className="flex gap-3">
+              <VMeters values={KEYS.map((k) => card.stats[k])} labels={KEYS.map((k) => k[0])} height={60} />
+              <div className="flex flex-1 flex-col justify-between">
+                <Spark data={KEYS.map((k) => card.stats[k])} className="text-blue" />
+                <div className="flex items-end gap-2">
+                  <span className="border border-blue px-1 font-mono text-lg font-semibold leading-none text-blue">{card.overall}</span>
+                  <span className="font-mono text-[8.5px] uppercase text-blue">Level</span>
+                </div>
+              </div>
+            </div>
+          </Win>
+          {card.languages.length > 0 && (
+            <Win title="Languages" delay={300}>
+              <div className="flex h-2.5 border border-blue">
+                {card.languages.map((l, i) => (
+                  <i key={l.name} className={i % 2 ? "dither" : "bg-blue"} style={{ width: `${l.share * 100}%` }} title={l.name} />
+                ))}
+              </div>
+              <div className="mt-1.5 space-y-0.5 font-mono text-[9.5px] uppercase text-blue">
+                {card.languages.map((l) => (
+                  <div key={l.name} className="flex justify-between"><span>{l.name}</span><span>{Math.round(l.share * 100)}%</span></div>
+                ))}
+              </div>
+            </Win>
+          )}
+        </div>
+      </section>
+
+      <section className="mx-4 mt-16 border-t border-blue/40 pt-8 sm:mx-6">
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <Headline as="h2" className="text-[clamp(32px,4vw,56px)]">Moveset.</Headline>
+          <Bracket>Top repos · power out of 250</Bracket>
+        </div>
+        <div className="mt-6 grid gap-4 md:grid-cols-3">
+          {card.moves.length === 0 && <p className="font-mono text-[11px] uppercase text-blue">No public projects yet.</p>}
+          {card.moves.map((m, i) => (
+            <a key={m.name} href={m.homepage ?? m.url} target="_blank" rel="noopener noreferrer" className="block">
+              <Win title={`Move_0${i + 1}${m.deployed ? " · live" : ""}`} delay={i * 120} className="h-full hover:shadow-[4px_4px_0_0_#2f3fc2]">
+                <div className="flex items-start justify-between gap-2">
+                  <span className="min-w-0 truncate font-serif text-2xl font-light uppercase text-blue">{m.name}</span>
+                  <span className="font-mono text-2xl font-semibold text-blue">{m.power}</span>
+                </div>
+                <Cells value={(m.power / 250) * 100} count={20} className="mt-2 h-2" />
+                <p className="mt-2 font-mono text-[10.5px] leading-snug text-blue">{m.description}</p>
+                <div className="mt-2 font-mono text-[9.5px] uppercase text-blue/70">{m.language ?? "—"} · ★ {m.stars.toLocaleString()}</div>
+              </Win>
+            </a>
           ))}
         </div>
-        <p className="relative mt-8 font-mono text-[10px] uppercase tracking-[0.2em] text-white/35">
-          Scanned {new Date(card.generatedAt).toUTCString()} · refreshes every 6h
-        </p>
-      </Sheet>
+      </section>
+
+      <section className="mx-4 mt-16 sm:mx-6">
+        <Bracket>Raw data · last 12 months</Bracket>
+        <div className="mt-3 grid grid-cols-2 border-l border-t border-blue bg-white sm:grid-cols-5">
+          {facts.map(([label, v]) => (
+            <div key={label} className="border-b border-r border-blue p-3">
+              <div className="font-mono text-[9px] uppercase text-blue/70">{label}</div>
+              <div className="font-serif text-3xl font-light text-blue">{v.toLocaleString()}</div>
+            </div>
+          ))}
+        </div>
+        <p className="mt-3 font-mono text-[9px] uppercase text-blue/60">Scanned {new Date(card.generatedAt).toUTCString()} · refreshes every 6h</p>
+      </section>
     </>
   );
 }

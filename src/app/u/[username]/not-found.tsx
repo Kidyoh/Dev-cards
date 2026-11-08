@@ -1,15 +1,15 @@
-import { Eyebrow, Sheet } from "@/components/hud";
-import { ScanForm } from "@/components/ScanForm";
+import { Headline, Label, Win } from "@/components/bp";
+import { ScanInput } from "@/components/ScanInput";
 
 export default function NotFound() {
   return (
-    <Sheet tone="dark">
-      <Eyebrow className="text-white">Error 404 · Subject not found</Eyebrow>
-      <h1 className="mt-5 text-[clamp(44px,7vw,96px)] font-bold leading-[0.9]">
-        No such <span className="text-orange">developer.</span>
-      </h1>
-      <p className="mt-6 max-w-md text-white/60">That GitHub user doesn&apos;t exist. Try another one.</p>
-      <ScanForm className="mt-8" />
-    </Sheet>
+    <section className="mx-4 mt-10 max-w-xl sm:mx-6">
+      <Label>Error 404</Label>
+      <Headline className="mt-2 text-[clamp(44px,6vw,84px)]">Subject<br />not found.</Headline>
+      <Win title="Instruction" className="mt-8">
+        <p className="mb-2 font-mono text-[10.5px] uppercase text-blue">That GitHub user doesn&apos;t exist. Try another.</p>
+        <ScanInput />
+      </Win>
+    </section>
   );
 }

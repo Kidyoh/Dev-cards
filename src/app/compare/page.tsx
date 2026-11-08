@@ -1,26 +1,13 @@
 import type { Metadata } from "next";
+import { Headline, Label } from "@/components/bp";
 import { ErrorBox } from "@/components/ErrorBox";
-import { Faceoff } from "@/components/Faceoff";
-import { Eyebrow, Sheet } from "@/components/hud";
+import { Versus } from "@/components/Versus";
 import { getCard } from "@/lib/cards";
 import type { CardData } from "@/lib/types";
 
-export const metadata: Metadata = { title: "Compare" };
+export const metadata: Metadata = { title: "Versus" };
 
 type Props = { searchParams: Promise<{ a?: string; b?: string }> };
-
-function Picker({ a, b }: { a?: string; b?: string }) {
-  const field = "min-w-0 flex-1 bg-transparent px-3 py-2 font-mono text-sm outline-none placeholder:text-ink/30";
-  return (
-    <form action="/compare" className="mt-8 flex max-w-[640px] flex-wrap items-center gap-1 rounded-[28px] border border-ink/15 bg-white p-1.5 sm:flex-nowrap sm:rounded-full">
-      <span className="ml-2 grid size-7 shrink-0 place-items-center rounded-md bg-lime font-mono text-[10px] font-bold">P1</span>
-      <input name="a" defaultValue={a} placeholder="username" aria-label="First username" className={field} />
-      <span className="ml-2 grid size-7 shrink-0 place-items-center rounded-md bg-orange font-mono text-[10px] font-bold">P2</span>
-      <input name="b" defaultValue={b} placeholder="username" aria-label="Second username" className={field} />
-      <button className="h-11 w-full shrink-0 rounded-full bg-ink px-6 text-sm font-semibold text-sheet sm:w-auto">Face off</button>
-    </form>
-  );
-}
 
 export default async function ComparePage({ searchParams }: Props) {
   const { a, b } = await searchParams;
@@ -33,17 +20,21 @@ export default async function ComparePage({ searchParams }: Props) {
       error = e;
     }
   }
+  const field = "min-w-0 flex-1 bg-transparent px-2 py-1.5 font-mono text-[12px] outline-none placeholder:text-blue/40";
 
   return (
-    <Sheet tone="light" className="blueprint">
-      <Eyebrow>Head to head</Eyebrow>
-      <h1 className="mt-4 text-[clamp(44px,7vw,96px)] font-bold leading-[0.9]">
-        <span>Player one</span> <span className="align-middle text-[0.35em] font-medium text-mute">vs</span>{" "}
-        <span className="text-ink/35">player two.</span>
-      </h1>
-      <Picker a={a} b={b} />
-      {error ? <div className="mt-8"><ErrorBox error={error} /></div> : null}
-      {pair && <Faceoff left={pair[0]} right={pair[1]} />}
-    </Sheet>
+    <section className="px-4 pt-6 sm:px-6">
+      <Label className="text-blue/60">Procedure · comparison</Label>
+      <Headline className="mt-2 text-[clamp(44px,6.4vw,92px)]">Subject A<br />vs subject B.</Headline>
+      <form action="/compare" className="mt-6 flex max-w-[620px] flex-wrap border border-blue bg-white sm:flex-nowrap">
+        <span className="grid place-items-center border-r border-blue bg-blue px-2 font-mono text-[10px] font-semibold text-white">A</span>
+        <input name="a" defaultValue={a} placeholder="username" aria-label="First username" className={field} />
+        <span className="grid place-items-center border-x border-blue bg-blue px-2 font-mono text-[10px] font-semibold text-white">B</span>
+        <input name="b" defaultValue={b} placeholder="username" aria-label="Second username" className={field} />
+        <button className="w-full bg-blue px-4 py-1.5 font-mono text-[11px] font-semibold uppercase text-white hover:bg-blue-deep sm:w-auto">Compare →</button>
+      </form>
+      {error ? <div className="mt-6 max-w-[620px]"><ErrorBox error={error} /></div> : null}
+      {pair && <Versus left={pair[0]} right={pair[1]} />}
+    </section>
   );
 }
