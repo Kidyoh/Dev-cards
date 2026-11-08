@@ -19,7 +19,7 @@ export function CardActions({ login, overall, url }: { login: string; overall: n
     <div className="space-y-2">
       <div className="flex flex-wrap gap-1.5">
         <a className={`${btn} bg-blue text-white hover:bg-blue-deep`} href={xUrl} target="_blank" rel="noopener noreferrer">Share on X ↗</a>
-        <a className={btn} href={`/api/card/${login}/image?format=card`} download={`${login}-dev-card.png`}>Download PNG</a>
+        <a className={btn} href={`/api/card/${login}/image?format=sheet`} download={`${login}-specsheet.png`}>Download PNG</a>
         <button
           className={btn}
           onClick={async () => {
