@@ -15,7 +15,7 @@ export default {
   async fetch(request: Request, env: Env, ctx: unknown): Promise<Response> {
     // The pages live on the frontend (Vercel). Send people there, keeping old /u/<name> links working.
     const site = String(env.SITE_URL ?? "").replace(/\/$/, "");
-    if (site && request.method === "GET") {
+    if (site && request.method === "GET" && new URL(site).host !== new URL(request.url).host) {
       const { pathname, search } = new URL(request.url);
       if (pathname === "/" || pathname.startsWith("/u/") || ["/leaderboard", "/compare", "/binder"].includes(pathname)) {
         return Response.redirect(`${site}${pathname}${search}`, 301);
