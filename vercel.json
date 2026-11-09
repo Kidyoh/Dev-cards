@@ -6,11 +6,32 @@
   "outputDirectory": "out",
   "cleanUrls": true,
   "trailingSlash": false,
-  "rewrites": [{ "source": "/u/:user", "destination": "/u" }],
+  "rewrites": [
+    {
+      "source": "/u/:user",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": ".*(TelegramBot|Twitterbot|facebookexternalhit|Facebot|WhatsApp|Discordbot|Slackbot|LinkedInBot|Embedly|redditbot|SkypeUriPreview|vkShare|Pinterestbot|Iframely).*"
+        }
+      ],
+      "destination": "https://specsheet.one-photo-a-day-backend.workers.dev/s/:user"
+    },
+    {
+      "source": "/u/:user",
+      "destination": "/u"
+    }
+  ],
   "headers": [
     {
       "source": "/_next/static/(.*)",
-      "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }]
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
+      ]
     }
   ]
 }

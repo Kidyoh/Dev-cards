@@ -33,5 +33,12 @@ export const fetchBoard = (lang?: string) =>
 export const imageUrl = (login: string, format: "card" | "og" = "og") =>
   `${API}/api/card/${encodeURIComponent(login)}/image?format=${format}`;
 
-/** Share link: served by the API so crawlers get the card preview; people are forwarded to the card page. */
-export const shareUrl = (login: string) => `${API}/s/${encodeURIComponent(login)}`;
+/** Public site address (specsheet.pro.et in production). */
+export const SITE = (process.env.NEXT_PUBLIC_SITE_URL || "").replace(/\/$/, "");
+
+/**
+ * Share link: the normal card URL. Link-preview bots (Telegram, X, WhatsApp…) hitting /u/<name> are
+ * routed by vercel.json to the API's preview page, so the card still shows up in the preview.
+ */
+export const shareUrl = (login: string) =>
+  `${SITE || (typeof window !== "undefined" ? window.location.origin : "")}/u/${encodeURIComponent(login)}`;
