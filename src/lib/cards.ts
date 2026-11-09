@@ -60,12 +60,8 @@ export async function getCard(
 
 // --- The board: Ethiopia only, built from people scanned on Specsheet -----------------------
 
-/** The one country the board covers. A card joins when its GitHub location is in Ethiopia. */
-export const BOARD_COUNTRY = "Ethiopia";
-
-export const LANGUAGES = [
-  "TypeScript", "JavaScript", "Python", "Go", "Java", "Kotlin", "Dart", "PHP", "C#", "C++", "Rust", "Swift", "Ruby",
-];
+import { BOARD_COUNTRY, LANGUAGES } from "./board-config";
+export { BOARD_COUNTRY, LANGUAGES };
 
 export function onBoard(card: CardData): boolean {
   return countryFromLocation(card.location) === BOARD_COUNTRY;

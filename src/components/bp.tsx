@@ -259,9 +259,9 @@ export function TopBar({ center }: { center?: ReactNode }) {
 }
 
 /** Serif display headline in the reference's style. */
-export function Headline({ children, className, as: Tag = "h1" }: { children: ReactNode; className?: string; as?: "h1" | "h2" }) {
+export function Headline({ children, className, as: Tag = "h1", style }: { children: ReactNode; className?: string; as?: "h1" | "h2"; style?: CSSProperties }) {
   return (
-    <Tag className={cn("font-serif font-light uppercase tracking-[-0.01em] text-blue", className)} style={{ lineHeight: 0.92 }}>
+    <Tag className={cn("font-serif font-light uppercase tracking-[-0.01em] text-blue", className)} style={{ lineHeight: 0.92, ...style }}>
       {children}
     </Tag>
   );

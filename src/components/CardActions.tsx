@@ -4,13 +4,16 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { addToBinder, inBinder, removeFromBinder } from "@/lib/binder";
 import { renderCardPng } from "@/lib/cardCanvas";
+import { imageUrl, shareUrl } from "@/lib/api";
 import { fetchRetry } from "@/lib/fetchRetry";
 import type { CardData } from "@/lib/types";
 
 const btn = "border border-blue px-2 py-1 font-mono text-[10.5px] font-semibold uppercase text-blue hover:bg-blue hover:text-white";
 
-export function CardActions({ card, url }: { card: CardData; url: string }) {
+export function CardActions({ card }: { card: CardData }) {
   const { login, overall } = card;
+  // Share links go through the API so X/Telegram show the card preview; people land on the card page.
+  const url = shareUrl(login);
   const router = useRouter();
   const [saved, setSaved] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -20,7 +23,7 @@ export function CardActions({ card, url }: { card: CardData; url: string }) {
 
   // Warm the edge cache for the X preview image so it's ready before anyone shares the link.
   useEffect(() => {
-    const t = setTimeout(() => fetchRetry(`/api/card/${login}/image?format=og`, 3).catch(() => {}), 1500);
+    const t = setTimeout(() => fetchRetry(imageUrl(login, "og"), 3).catch(() => {}), 1500);
     return () => clearTimeout(t);
   }, [login]);
 

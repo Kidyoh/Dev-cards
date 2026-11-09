@@ -7,10 +7,11 @@
     "build": "next build",
     "start": "next start",
     "lint": "tsc --noEmit",
-    "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
-    "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
+    "preview": "SPECSHEET_TARGET=api opennextjs-cloudflare build && opennextjs-cloudflare preview",
+    "deploy": "SPECSHEET_TARGET=api opennextjs-cloudflare build && opennextjs-cloudflare deploy",
     "db:migrate": "wrangler d1 migrations apply specsheet --remote",
-    "db:migrate:local": "wrangler d1 migrations apply specsheet --local"
+    "db:migrate:local": "wrangler d1 migrations apply specsheet --local",
+    "build:web": "SPECSHEET_TARGET=web next build"
   },
   "dependencies": {
     "@fontsource/ibm-plex-mono": "5.3.0",

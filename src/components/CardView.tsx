@@ -1,51 +1,107 @@
-import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+"use client";
+
+import { useCallback, useEffect, useState } from "react";
 import { Barcode, Bracket, Cells, Headline, Label, Spark, Tag, VMeters, Win } from "@/components/bp";
 import { CardActions } from "@/components/CardActions";
 import { Callouts } from "@/components/Callouts";
 import { DevCard } from "@/components/DevCard";
-import { ErrorBox } from "@/components/ErrorBox";
-import { boardRank, getCard } from "@/lib/cards";
-import { GitHubError } from "@/lib/github";
-import { siteUrl } from "@/lib/site";
+import { ScanInput } from "@/components/ScanInput";
+import { ApiError, fetchCard, type CardWithRank } from "@/lib/api";
 import { RARITY } from "@/lib/theme";
-import { STAT_LABELS, type CardData, type StatKey } from "@/lib/types";
+import { STAT_LABELS, type StatKey } from "@/lib/types";
 
-type Props = { params: Promise<{ username: string }>; searchParams: Promise<{ rescan?: string }> };
 const KEYS: StatKey[] = ["SHP", "CON", "RNG", "DEP", "IMP", "COL"];
 
-async function load(username: string, rescan = false): Promise<{ card?: CardData; error?: unknown }> {
-  try {
-    return { card: await getCard(decodeURIComponent(username), undefined, { rescan }) };
-  } catch (error) {
-    if (error instanceof GitHubError && error.status === 404) notFound();
-    return { error };
+/** Fit the longest word of the name in the ~260px left column. */
+function nameSize(name: string) {
+  const longest = Math.max(...name.split(/\s+/).map((w) => w.length), 1);
+  return `${Math.max(28, Math.min(64, Math.floor(400 / longest)))}px`;
+}
+
+/** The username from /u/<name> (Vercel rewrite) or ?u=<name>. */
+function usernameFromLocation(): string {
+  const m = window.location.pathname.match(/^\/u\/([^/]+)/);
+  if (m) return decodeURIComponent(m[1]);
+  return new URLSearchParams(window.location.search).get("u") ?? "";
+}
+
+type State =
+  | { kind: "loading"; login: string }
+  | { kind: "ready"; card: CardWithRank }
+  | { kind: "missing"; login: string }
+  | { kind: "error"; message: string };
+
+export function CardView() {
+  const [state, setState] = useState<State>({ kind: "loading", login: "" });
+  const [rescanning, setRescanning] = useState(false);
+
+  useEffect(() => {
+    const login = usernameFromLocation();
+    if (!login) {
+      setState({ kind: "missing", login: "" });
+      return;
+    }
+    setState({ kind: "loading", login });
+    fetchCard(login)
+      .then((card) => {
+        setState({ kind: "ready", card });
+        document.title = `${card.name}: ${card.overall} ${card.role.name} · Specsheet`;
+      })
+      .catch((e: unknown) =>
+        e instanceof ApiError && (e.status === 404 || e.status === 400)
+          ? setState({ kind: "missing", login })
+          : setState({ kind: "error", message: e instanceof Error ? e.message : "Something went wrong" }),
+      );
+  }, []);
+
+  const onRescan = useCallback(async () => {
+    if (state.kind !== "ready" || rescanning) return;
+    setRescanning(true);
+    try {
+      const card = await fetchCard(state.card.login, true);
+      setState({ kind: "ready", card });
+    } catch {
+      /* keep the current card */
+    } finally {
+      setRescanning(false);
+    }
+  }, [state, rescanning]);
+
+  if (state.kind === "loading") {
+    return (
+      <div className="mx-4 mt-24 text-center font-mono text-[11px] uppercase text-blue sm:mx-6">
+        Scanning {state.login ? `@${state.login}` : "subject"} <span className="animate-blink">▮</span>
+        <div className="mt-2 text-blue/60">Reading commits · counting stars · scouting moves</div>
+      </div>
+    );
   }
-}
+  if (state.kind === "missing") {
+    return (
+      <section className="mx-4 mt-10 max-w-xl sm:mx-6">
+        <Label>Error 404</Label>
+        <Headline className="mt-2 text-[clamp(44px,6vw,84px)]">Subject<br />not found.</Headline>
+        <Win title="Instruction" className="mt-8">
+          <p className="mb-2 font-mono text-[10.5px] uppercase text-blue">
+            {state.login ? `No GitHub user called @${state.login}.` : "No username given."} Try another.
+          </p>
+          <ScanInput />
+        </Win>
+      </section>
+    );
+  }
+  if (state.kind === "error") {
+    return (
+      <section className="mx-4 mt-10 max-w-xl sm:mx-6">
+        <div className="border border-blue bg-white">
+          <div className="bg-blue px-1.5 py-[2px] font-mono text-[9.5px] font-semibold uppercase text-white">Error</div>
+          <p className="p-3 font-mono text-[12px] text-blue">{state.message}</p>
+        </div>
+      </section>
+    );
+  }
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { username } = await params;
-  const { card } = await load(username);
-  if (!card) return { title: username };
-  const title = `${card.name}: ${card.overall} ${card.role.name}`;
-  const description = `${RARITY[card.rarity].label} card · SHP ${card.stats.SHP} · CON ${card.stats.CON} · RNG ${card.stats.RNG} · DEP ${card.stats.DEP}`;
-  const image = `/api/card/${card.login}/image?format=og`;
-  return {
-    title,
-    description,
-    openGraph: { title, description, images: [{ url: image, width: 1200, height: 630 }] },
-    twitter: { card: "summary_large_image", title, description, images: [image] },
-  };
-}
-
-export default async function CardPage({ params, searchParams }: Props) {
-  const { username } = await params;
-  const { rescan } = await searchParams;
-  const { card, error } = await load(username, rescan === "1");
-  if (!card) return <div className="mx-4 mt-10 sm:mx-6"><ErrorBox error={error} /></div>;
-
-  const url = `${siteUrl()}/u/${card.login}`;
-  const rank = await boardRank(card).catch(() => null);
+  const card = state.card;
+  const rank = card.boardRank;
   const facts: [string, number][] = [
     ["Contributions", card.raw.contributions],
     ["Commits", card.raw.commits],
@@ -66,7 +122,7 @@ export default async function CardPage({ params, searchParams }: Props) {
         <div className="flex flex-col gap-5">
           <div>
             <Label className="text-blue/60">Subject file / {card.login}</Label>
-            <Headline className="mt-2 break-words text-[clamp(40px,4.6vw,64px)]">{card.name}</Headline>
+            <Headline className="mt-2 break-words" style={{ fontSize: nameSize(card.name) }}>{card.name}</Headline>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <Tag>{RARITY[card.rarity].label}</Tag>
@@ -75,7 +131,7 @@ export default async function CardPage({ params, searchParams }: Props) {
           <a href={`https://github.com/${card.login}`} target="_blank" rel="noopener noreferrer" className="font-mono text-[11px] uppercase text-blue underline underline-offset-2">
             github.com/{card.login} ↗
           </a>
-          <CardActions card={card} url={url} />
+          <CardActions card={card} />
           <Win title="Ethiopia board" delay={120}>
             {rank ? (
               <div className="flex items-end justify-between gap-3">
@@ -92,7 +148,7 @@ export default async function CardPage({ params, searchParams }: Props) {
             ) : (
               <div className="font-mono text-[10.5px] uppercase leading-snug text-blue">
                 Not on the board. Set your GitHub location to Ethiopia or your city, then{" "}
-                <a href={`/u/${card.login}?rescan=1`} className="underline underline-offset-2">rescan</a>.
+                <button onClick={onRescan} className="underline underline-offset-2">rescan</button>.
               </div>
             )}
           </Win>
@@ -195,7 +251,9 @@ export default async function CardPage({ params, searchParams }: Props) {
         </div>
         <p className="mt-3 font-mono text-[9px] uppercase text-blue/60">
           Scanned {new Date(card.generatedAt).toUTCString()} · refreshes every 6h ·{" "}
-          <a href={`/u/${card.login}?rescan=1`} className="underline underline-offset-2">Rescan now</a>
+          <button onClick={onRescan} disabled={rescanning} className="underline underline-offset-2 disabled:opacity-50">
+            {rescanning ? "Rescanning…" : "Rescan now"}
+          </button>
         </p>
       </section>
     </>

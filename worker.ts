@@ -13,6 +13,14 @@ const IMAGE_ROUTE = /^\/api\/card\/([A-Za-z0-9-]{1,39})\/image$/;
 
 export default {
   async fetch(request: Request, env: Env, ctx: unknown): Promise<Response> {
+    // The pages live on the frontend (Vercel). Send people there, keeping old /u/<name> links working.
+    const site = String(env.SITE_URL ?? "").replace(/\/$/, "");
+    if (site && request.method === "GET") {
+      const { pathname, search } = new URL(request.url);
+      if (pathname === "/" || pathname.startsWith("/u/") || ["/leaderboard", "/compare", "/binder"].includes(pathname)) {
+        return Response.redirect(`${site}${pathname}${search}`, 301);
+      }
+    }
     if (request.method === "GET" && env.IMAGES) {
       const url = new URL(request.url);
       const m = url.pathname.match(IMAGE_ROUTE);
