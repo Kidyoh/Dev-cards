@@ -20,7 +20,7 @@
   ],
   "vars": {
     // Public URL, used for share links and Open Graph images. Change when the custom domain is live.
-    "SITE_URL": "https://specsheet.one-photo-a-day-backend.workers.dev"
+    "SITE_URL": "https://specsheet.pro.et"
   }
   // GITHUB_TOKEN is a secret: `npx wrangler secret put GITHUB_TOKEN` or Workers → Settings → Variables.
 }
