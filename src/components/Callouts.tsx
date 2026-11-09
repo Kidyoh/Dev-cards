@@ -7,19 +7,46 @@ import type { CardData } from "@/lib/types";
 const REACH = 130;
 
 /** Blue hairline callouts from features of the card out to mono labels (desktop only). */
-export function Callouts({ card, children }: { card: CardData; children: ReactNode }) {
+type Item = { px: number; py: number; side: "l" | "r"; ly: number; k: string; v: string };
+
+/**
+ * Front: rating, subject, stats, ability. Back (after a flip): the three moves and the abilities,
+ * pointing at where they sit on the back of the card.
+ */
+export function Callouts({ card, flipped = false, children }: { card: CardData; flipped?: boolean; children: ReactNode }) {
   const slab = card.rarity === "legacy";
   const W = slab ? 340 : 300, H = slab ? 530 : 420, ox = slab ? 20 : 0, oy = slab ? 100 : 0;
-  const items = [
+  const front: Item[] = [
     { px: ox + 78, py: oy + 82, side: "l", ly: oy + 40, k: "Overall rating", v: `${card.overall} · ${card.rarity}` },
     { px: ox + 236, py: oy + 70, side: "r", ly: oy + 30, k: "Subject", v: `@${card.login}` },
     { px: ox + 96, py: oy + 290, side: "l", ly: oy + 300, k: "Stats · 06", v: card.role.name },
     { px: ox + 214, py: oy + 346, side: "r", ly: oy + 380, k: "Ability", v: card.abilities[0]?.name ?? "—" },
-  ] as const;
+  ];
+  // Back layout: moves start ~y90 and are ~70px apart; abilities sit near the bottom.
+  const moveY = [90, 160, 230];
+  const back: Item[] = [
+    ...card.moves.slice(0, 3).map((m, i): Item => ({
+      px: ox + (i === 1 ? 238 : 62),
+      py: oy + moveY[i],
+      side: i === 1 ? "r" : "l",
+      ly: oy + (i === 0 ? 40 : i === 1 ? 150 : 250),
+      k: `Move 0${i + 1}${m.deployed ? " · live" : ""}`,
+      v: `${m.name} · ${m.power}`,
+    })),
+    {
+      px: ox + 214,
+      py: oy + 326,
+      side: "r",
+      ly: oy + 380,
+      k: `Abilities · 0${card.abilities.length}`,
+      v: card.abilities.length ? `${card.abilities[0].name}${card.abilities.length > 1 ? ` +${card.abilities.length - 1}` : ""}` : "—",
+    },
+  ];
+  const items = flipped ? back : front;
   return (
     <div className="relative">
       {children}
-      <div className="pointer-events-none absolute top-0 hidden xl:block" style={{ left: -REACH, width: W + REACH * 2, height: H }}>
+      <div key={flipped ? "back" : "front"} className="pointer-events-none absolute top-0 hidden xl:block" style={{ left: -REACH, width: W + REACH * 2, height: H }}>
         <svg className="absolute inset-0 overflow-visible" width={W + REACH * 2} height={H} aria-hidden>
           {items.map((c, i) => {
             const x0 = c.px + REACH, y0 = c.py;

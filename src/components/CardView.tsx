@@ -34,6 +34,7 @@ type State =
 export function CardView() {
   const [state, setState] = useState<State>({ kind: "loading", login: "" });
   const [rescanning, setRescanning] = useState(false);
+  const [flipped, setFlipped] = useState(false);
 
   useEffect(() => {
     const login = usernameFromLocation();
@@ -164,8 +165,8 @@ export function CardView() {
 
         {/* center: the card */}
         <div className="flex flex-col items-center gap-3">
-          <Callouts card={card}>
-            <DevCard card={card} idle countUp />
+          <Callouts card={card} flipped={flipped}>
+            <DevCard card={card} onFlipChange={setFlipped} idle countUp />
           </Callouts>
           <div className="flex w-full max-w-[340px] justify-between font-mono text-[9px] uppercase text-blue/70">
             <span>Drag to tilt · click to flip</span>

@@ -274,6 +274,7 @@ export function DevCard({
   idle = false,
   interactive = true,
   countUp = false,
+  onFlipChange,
 }: {
   card: CardData;
   scale?: number;
@@ -284,6 +285,8 @@ export function DevCard({
   interactive?: boolean;
   /** Count the numbers up from zero when the card mounts. */
   countUp?: boolean;
+  /** Called with the new side whenever the card is flipped. */
+  onFlipChange?: (flipped: boolean) => void;
 }) {
   const uid = `${card.login}-${card.rarity}`.replace(/[^a-z0-9-]/gi, "");
   const [flipped, setFlipped] = useState(false);
@@ -293,10 +296,10 @@ export function DevCard({
   const backVis = useTransform(frontVis, (v) => (v === "visible" ? "hidden" : "visible"));
 
   const toggle = () => {
-    setFlipped((f) => {
-      flip.set(f ? 0 : 180);
-      return !f;
-    });
+    const next = !flipped;
+    flip.set(next ? 180 : 0);
+    setFlipped(next);
+    onFlipChange?.(next);
   };
 
   const isSlab = slab && card.rarity === "legacy";
