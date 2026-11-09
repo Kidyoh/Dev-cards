@@ -63,12 +63,12 @@ SHOTS = [
     ("community", "a", "that became", 1, "white", "hl", None),
     ("friends,", "lifelong", "a talented", 2, "pink", None, None),
     ("co-founder", "talented", "and a channel", 2, "night", "ul", None),
-    ("1,300+", "more than", "readers who", 2, "type", "circle", None),
-    ("readers", "1,300+", "who stay for", 2, "old", "hl", None),
-    ("Good", "signing off:", "night, my", 1, "night", None, None),
-    ("night,", "Good", "my beautiful", 1, "future", None, None),
-    ("beautiful", "night, my", "people.", 1, "night", None, None),
-    ("people.", "my beautiful", "Keep it", 1, "future", "ul", None),
+    ("1,300+", "a family of", "and growing,", 2, "type", "circle", None),
+    ("family", "one big", "that keeps growing", 2, "old", "hl", None),
+    ("Comments,", "keep it coming:", "suggestions, advice", 1, "night", None, None),
+    ("suggestions,", "Comments,", "advice, everything", 1, "future", None, None),
+    ("advice,", "suggestions,", "everything. Join", 1, "night", None, None),
+    ("everything.", "advice,", "Learn. Build.", 1, "future", "ul", None),
     ("JOIN", "read more.", "the chronicles", 2, "tab", "hl", "anton"),
 ]
 FINAL_EIGHTHS = 16
@@ -76,8 +76,7 @@ TOTAL = 450
 
 ARTICLE = (
     "It started as a place to think out loud. Today Kidus's Chronicles is home to more than 1,300 "
-    "readers who come for the builds, stay for the honesty, and often get signed off with a verse "
-    "and a good night, my beautiful people. The channel is a running diary of learning Machine "
+    "people, a family that comes for the builds and stays for the honesty. The channel is a running diary of learning Machine "
     "Learning and AI, shipping side projects and sharing what actually works. Research your tech "
     "stack first. Guide the AI, don't let it hand you the idea. Review in a separate conversation "
     "so the review isn't biased. Test it yourself, then ship it and let real users try it. Give your "
@@ -131,7 +130,7 @@ class Shot:
         self.CW, self.CH = int(OW * 1.3), int(OH * 1.3)
         CW, CH = self.CW, self.CH
         rnd = random.Random(idx * 31 + 7)
-        tw = (0.60 if landscape else 0.90) * OW / 0.8
+        tw = (0.52 if landscape else 0.74) * OW / 0.8
         cap = ((0.34 if landscape else 0.24) * OH) / 0.8
         fname = fover or st["body"]
         f = fit_font(fname, word, int(tw))
@@ -190,7 +189,7 @@ class Shot:
                 d.line([(x0, yy), (x0 + (x1 - x0) * k, yy)], fill=red, width=w)
             else:
                 cx, cy = (x0 + x1) / 2, (y0 + y1) / 2
-                rx, ry = (x1 - x0) / 2 + self.fs * 0.35, (y1 - y0) / 2 + self.fs * 0.3
+                rx, ry = (x1 - x0) / 2 + self.fs * 0.18, (y1 - y0) / 2 + self.fs * 0.28
                 pts = [(cx + rx * math.cos(a), cy + ry * math.sin(a) * (1 + 0.04 * math.sin(3 * a)))
                        for a in np.linspace(-2.6, -2.6 + 2 * math.pi * 1.08 * k, 120)]
                 if len(pts) > 1:
@@ -200,8 +199,8 @@ class Shot:
 
 def render_final(OW, OH, landscape):
     """Classified-ad block; returns (canvas, handle_center, box_center, s_tight, s_wide)."""
-    s_tight = 1.12
-    hw = (0.70 if landscape else 0.94) * OW  # handle width on screen when tight
+    s_tight = 1.0
+    hw = (0.60 if landscape else 0.80) * OW  # handle width on screen when tight
     fh = fit_font("interK", HANDLE, int(hw))
     W = int(OW * 4.2)
     H = int(OH * 4.2)
@@ -225,7 +224,7 @@ def render_final(OW, OH, landscape):
     ft = fit_font("playK", title, int(hwid * 1.05))
     tag1 = "Learning AI. Building in public."
     f1 = fit_font("play", tag1, int(hwid * 0.92))
-    tag2 = "JOIN 1,300+ READERS ON TELEGRAM"
+    tag2 = "JOIN THE FAMILY ON TELEGRAM"
     f2 = fit_font("oswaldB", tag2, int(hwid * 0.95))
     gap = fh.size * 0.55
     tb = d.textbbox((0, 0), title, font=ft)
@@ -279,84 +278,182 @@ def render_final(OW, OH, landscape):
 # Audio
 # --------------------------------------------------------------------------
 def synth_audio(cut_frames, final_start, path):
+    """120 BPM track: Am-F-C-G loop, four-on-the-floor drums, sidechained bass/pad,
+    a plucked note on every cut, riser into the handle, then a big C-major resolve."""
     n = int(SR * TOTAL / FPS)
-    L = np.zeros(n, np.float32)
-    R = np.zeros(n, np.float32)
     rng = np.random.default_rng(2)
+    drums = np.zeros((n, 2), np.float32)
+    music = np.zeros((n, 2), np.float32)
+    sc = np.ones(n, np.float32)  # sidechain gain (ducked by the kick)
 
-    def add(sig, t, gain=1.0, pan=0.0):
-        i = int(t * SR)
+    def tv(d):
+        return np.arange(int(SR * d)) / SR
+
+    def put(bus, sig, t, gain=1.0, pan=0.0):
+        i = int(round(t * SR))
         if i >= n or i < 0:
             return
         s = sig[: n - i] * gain
-        L[i:i + len(s)] += s * (1 - max(pan, 0))
-        R[i:i + len(s)] += s * (1 + min(pan, 0))
-
-    def tvec(d):
-        return np.arange(int(SR * d)) / SR
-
-    def kick(d=0.4):
-        t = tvec(d)
-        ph = 2 * np.pi * np.cumsum(45 + 120 * np.exp(-t * 30)) / SR
-        return (np.sin(ph) * np.exp(-t * 8)).astype(np.float32)
-
-    def click(d=0.03, decay=220):
-        x = np.diff(rng.normal(0, 1, int(SR * d)).astype(np.float32), prepend=0)
-        return x * np.exp(-tvec(d)[: len(x)] * decay) * 0.5
-
-    def tone(f, d, decay, amp=0.3):
-        t = tvec(d)
-        return (np.sin(2 * np.pi * f * t) * np.exp(-t * decay) * amp).astype(np.float32)
-
-    final_t = final_start / FPS
-    # groove: kicks on beats, hats on offbeats, bass line
-    beats = int(final_t / 0.5)
-    for b in range(beats):
-        tb = b * 0.5
-        add(kick(), tb, 0.8 if b >= 4 else 0.0)
-        add(click(0.05, 90), tb + 0.25, 0.2, pan=0.35)
-        root = [55, 55, 49, 41.2][(b // 4) % 4]
-        add(tone(root, 0.45, 4, 0.33), tb)
-    # each cut: printing-press "stamp" (tick + thump), typewriter clacks in the intro
-    notes = [523.3, 587.3, 659.3, 784.0, 880.0, 784.0, 659.3, 587.3]
-    for i, f in enumerate(cut_frames):
-        t = f / FPS
-        if i < 4:
-            add(click(0.035, 160) * 2.2, t, 0.9, pan=rng.uniform(-.4, .4))
-            add(tone(1800, 0.05, 60, 0.4), t, 0.6)
+        if s.ndim == 1:
+            bus[i:i + len(s), 0] += s * min(1, 1 - pan)
+            bus[i:i + len(s), 1] += s * min(1, 1 + pan)
         else:
-            add(click(0.025, 260) * 1.6, t, 0.55, pan=rng.uniform(-.5, .5))
-            add(tone(notes[i % len(notes)], 0.18, 14, 0.18), t)
-    add(tone(2093, 1.0, 4, 0.25), cut_frames[3] / FPS + 0.2)  # typewriter bell after "IT."
-    # riser into the final shot
+            bus[i:i + len(s)] += s
+
+    def filt(x, lo=None, hi=None):
+        """Zero-phase FFT band filter with soft edges."""
+        X = np.fft.rfft(x, axis=0)
+        fr = np.fft.rfftfreq(len(x), 1 / SR)
+        g = np.ones_like(fr)
+        if hi:
+            g *= 1 / (1 + (fr / hi) ** 4)
+        if lo:
+            g *= 1 / (1 + (lo / np.maximum(fr, 1)) ** 4)
+        X *= g if x.ndim == 1 else g[:, None]
+        return np.fft.irfft(X, len(x), axis=0).astype(np.float32)
+
+    def midi(m):
+        return 440 * 2 ** ((m - 69) / 12)
+
+    def saw(f, d, detune=(0,)):
+        t = tv(d)
+        return sum(2 * ((t * f * 2 ** (c / 1200)) % 1) - 1 for c in detune) / len(detune)
+
+    def kick():
+        t = tv(0.38)
+        ph = 2 * np.pi * np.cumsum(48 + 130 * np.exp(-t * 35)) / SR
+        body = np.sin(ph) * np.exp(-t * 9)
+        clk = rng.normal(0, 1, len(t)) * np.exp(-t * 400) * 0.25
+        return (body + clk).astype(np.float32)
+
+    def clap():
+        t = tv(0.25)
+        nz = filt(rng.normal(0, 1, len(t)).astype(np.float32), 900, 5000)
+        env = np.exp(-t * 18) + 0.5 * np.exp(-((t - 0.012) % 0.011) * 300) * (t < 0.035)
+        tone = np.sin(2 * np.pi * 190 * t) * np.exp(-t * 30) * 0.3
+        return (nz * env * 0.6 + tone).astype(np.float32)
+
+    def hat(d=0.05):
+        t = tv(d)
+        return filt(rng.normal(0, 1, len(t)).astype(np.float32), 7000) * np.exp(-t * 70) * 0.35
+
+    def pluck(f, d=0.9):
+        """Karplus-Strong plucked string."""
+        N = int(SR / f)
+        buf = rng.uniform(-1, 1, N).astype(np.float32)
+        out = np.empty(int(SR * d), np.float32)
+        for i in range(0, len(out), N):
+            k = min(N, len(out) - i)
+            out[i:i + k] = buf[:k]
+            buf = 0.996 * 0.5 * (buf + np.roll(buf, -1))
+        return filt(out, 120, 6000)
+
+    def typeclack():
+        t = tv(0.06)
+        x = filt(rng.normal(0, 1, len(t)).astype(np.float32), 1500, 9000) * np.exp(-t * 120)
+        return (x + np.sin(2 * np.pi * 2400 * t) * np.exp(-t * 90) * 0.2).astype(np.float32)
+
+    beat = 0.5
+    t0 = cut_frames[4] / FPS            # the drop lands on "KIDUS'S"
+    tf = final_start / FPS              # the handle shot
+    # chords (root midi, triad offsets) per 2-second bar: Am F C G
+    prog = [(57, (0, 3, 7)), (53, (0, 4, 7)), (60, (0, 4, 7)), (55, (0, 4, 7))]
+
+    # --- intro: typewriter clacks + a soft swelling pad ---
+    for f in cut_frames[:4]:
+        put(drums, typeclack(), f / FPS, 0.9, rng.uniform(-.3, .3))
+    put(music, pluck(midi(81), 1.5), cut_frames[3] / FPS + 0.25, 0.25)  # little "ding"
+    sw = np.sum([saw(midi(57 + o), t0, (-8, 0, 7)) for o in (0, 3, 7, 12)], 0)
+    sw = filt(sw.astype(np.float32), None, 900) * np.linspace(0, 1, len(sw)) ** 2 * 0.12
+    put(music, sw, 0.0)
+
+    # --- groove from the drop to the final shot ---
+    nb = int(round((tf - t0) / beat))
+    for b in range(nb):
+        t = t0 + b * beat
+        build = t >= tf - 2.0
+        if not (t >= tf - beat):        # drop out for the last beat before the handle
+            put(drums, kick(), t, 0.95)
+            i = int(t * SR)
+            dk = np.minimum(1, 0.35 + 0.65 * (np.arange(int(0.3 * SR)) / (0.3 * SR)) ** 0.6)
+            sc[i:i + len(dk)] = np.minimum(sc[i:i + len(dk)], dk[: n - i])
+        if b % 2 == 1 and not build:
+            put(drums, clap(), t, 0.55)
+        put(drums, hat(), t + beat / 2, 0.5, 0.3)
+        if build:  # snare roll that speeds up
+            step = beat / 2 if t < tf - 1.0 else beat / 4
+            k = 0
+            while k * step < beat - 1e-6 and t + k * step < tf - 0.05:
+                put(drums, clap(), t + k * step, 0.18 + 0.35 * (t + k * step - (tf - 2.0)) / 2.0, rng.uniform(-.2, .2))
+                k += 1
+    # bass + pad per bar
+    bar = 0
+    t = t0
+    while t < tf - 1e-6:
+        root, tri = prog[bar % 4]
+        dur = min(2.0, tf - t)
+        for e in range(int(dur / 0.25)):  # eighth-note bass
+            s = saw(midi(root - 24), 0.22, (0, 6)) * np.exp(-tv(0.22) * 5)
+            put(music, filt(s.astype(np.float32), None, 380) * 0.5, t + e * 0.25)
+        pad = np.sum([saw(midi(root + o), dur, (-9, 0, 9)) for o in tri + (12,)], 0)
+        pad = filt(pad.astype(np.float32), None, 1500) * 0.06
+        pad *= np.minimum(1, np.minimum(tv(dur) / 0.08, (dur - tv(dur)) / 0.1 + 0.01))
+        put(music, pad, t)
+        bar += 1
+        t += 2.0
+
+    # --- a plucked chord tone on every cut after the intro (rising arpeggio) ---
+    for j, f in enumerate(cut_frames[4:]):
+        t = f / FPS
+        root, tri = prog[int(max(t - t0, 0) // 2.0) % 4]
+        note = root + 12 + (tri + (12,))[j % 4]
+        put(music, pluck(midi(note), 0.8), t, 0.32, pan=(-.35, .35)[j % 2])
+
+    # --- riser into the handle ---
     d = 2.0
-    t = tvec(d)
-    ph = 2 * np.pi * np.cumsum(220 + 900 * (t / d) ** 2) / SR
-    nz = np.diff(rng.normal(0, 1, len(t)).astype(np.float32), prepend=0)
-    add(((np.sin(ph) * 0.2 + nz * 0.22) * (t / d) ** 2.5).astype(np.float32), final_t - d, 0.9)
-    # final: boom, then zoom-out whoosh, then a soft chord
-    tb = tvec(2.5)
-    add((np.sin(2 * np.pi * (40 + 50 * np.exp(-tb * 9)) * tb) * np.exp(-tb * 1.8)).astype(np.float32), final_t, 1.2)
-    zt = final_t + 0.5
-    dz = 1.0
-    x = rng.normal(0, 1, int(SR * dz)).astype(np.float32)
-    x = np.convolve(x, np.ones(10) / 10, "same") * np.sin(np.pi * tvec(dz)[: len(x)] / dz) ** 2
-    add(x * 1.1, zt, 0.9)
-    for fq in (261.6, 329.6, 392.0, 523.3):
-        add(tone(fq, 3.0, 0.9, 0.12), zt + dz)
-    for dly, g in ((0.12, 0.25), (0.25, 0.15), (0.4, 0.08)):
+    tt = tv(d)
+    nz = rng.normal(0, 1, len(tt)).astype(np.float32)
+    rise = np.zeros_like(nz)
+    for k in range(8):  # stepped sweep of a band of noise
+        seg = slice(k * len(tt) // 8, (k + 1) * len(tt) // 8)
+        rise[seg] = filt(nz, 400 * 1.45 ** k, 900 * 1.45 ** k)[seg]
+    put(music, rise * (tt / d) ** 2 * 0.3, tf - d)
+
+    # --- final: boom + crash + big C major chord + arpeggio ---
+    tb = tv(2.5)
+    put(drums, (np.sin(2 * np.pi * np.cumsum(38 + 60 * np.exp(-tb * 8)) / SR) * np.exp(-tb * 1.8)).astype(np.float32), tf, 1.0)
+    put(drums, kick(), tf, 0.8)
+    cr = tv(3.0)
+    put(drums, filt(rng.normal(0, 1, len(cr)).astype(np.float32), 5000, 11000) * np.exp(-cr * 4.5) * 0.12, tf)
+    dur = TOTAL / FPS - tf
+    chord = np.sum([saw(midi(48 + o), dur, (-10, 0, 10)) for o in (0, 7, 12, 16, 19, 24)], 0)
+    chord = filt(chord.astype(np.float32), None, 2200) * 0.07 * np.minimum(1, tv(dur) / 0.05)
+    put(music, chord, tf)
+    put(music, filt(saw(midi(36), dur, (0, 5)).astype(np.float32), None, 250) * 0.35 * np.exp(-tv(dur) * 0.6), tf)
+    for j, m in enumerate((72, 76, 79, 84, 88)):  # arpeggio as the camera pulls back
+        put(music, pluck(midi(m), 1.6), tf + 0.5 + j * 0.125, 0.3, pan=(j - 2) * 0.2)
+
+    # --- reverb on the music bus (feedback delays), sidechain, mix ---
+    wet = np.zeros_like(music)
+    for dly, g in ((0.031, 0.5), (0.047, 0.45), (0.071, 0.4), (0.113, 0.33), (0.173, 0.25), (0.251, 0.18)):
         k = int(SR * dly)
-        L[k:] += L[:-k] * g
-        R[k:] += R[:-k] * g
-    st = np.tanh(np.stack([L, R], 1) * 1.3)
-    st /= np.max(np.abs(st)) + 1e-6
-    fade = int(SR * 0.6)
-    st[-fade:] *= np.linspace(1, 0, fade)[:, None]
+        tmp = music.copy()
+        for _ in range(3):
+            tmp[k:] += tmp[:-k] * g
+        wet += tmp * 0.08
+    wet = filt(wet, 200, 6000)
+    wet[:, 1] = np.roll(wet[:, 1], int(SR * 0.013))
+    mix = (music + wet) * sc[:, None] + drums
+    mix /= np.max(np.abs(mix)) + 1e-9
+    mix = np.tanh(mix * 1.1) / np.tanh(1.1)
+    fade = int(SR * 1.2)
+    mix[-fade:] *= np.linspace(1, 0, fade)[:, None] ** 1.5
+    mix[: int(SR * 0.02)] *= np.linspace(0, 1, int(SR * 0.02))[:, None]
     with wave.open(path, "wb") as w:
         w.setnchannels(2)
         w.setsampwidth(2)
         w.setframerate(SR)
-        w.writeframes((st * 0.92 * 32767).astype(np.int16).tobytes())
+        w.writeframes((mix * 0.89 * 32767).astype(np.int16).tobytes())
 
 
 # --------------------------------------------------------------------------
@@ -378,7 +475,7 @@ def main():
     grain = rng.normal(0, 1, (OH + 64, OW + 64)).astype(np.float32)
     yy, xx = np.mgrid[0:OH, 0:OW].astype(np.float32)
     # macro-lens depth of field: sharp band around the word line, soft above/below
-    dof = np.clip((np.abs(yy - OH / 2) / (OH * (0.13 if not a.landscape else 0.22)) - 1) * 0.8, 0, 1)
+    dof = np.clip((np.abs(yy - OH / 2) / (OH * (0.075 if not a.landscape else 0.16)) - 1) * 1.1, 0, 1)
     dof = np.clip(dof + np.clip((np.abs(xx - OW / 2) / (OW * 0.5) - 0.75) * 2, 0, 1), 0, 1)[..., None]
     rr = np.sqrt(((xx - OW / 2) / (OW / 2)) ** 2 + ((yy - OH / 2) / (OH / 2)) ** 2)
     vign = (1 - 0.45 * np.clip(rr - 0.4, 0, 1) ** 1.4)[..., None]
@@ -399,8 +496,8 @@ def main():
             ef = sched[i + 1][0] if i + 1 < len(sched) else final_start
             t = (f - sf) / max(ef - sf, 1)
             sh = shots[i]
-            s = 0.8 * (1 + 0.06 * t + 0.02 * (1 - ease_out(min((f - sf) / 4, 1))))
-            dx = (0.5 - t) * OW * 0.05
+            s = 0.8 * (1 + 0.04 * t + 0.02 * (1 - ease_out(min((f - sf) / 4, 1))))
+            dx = (0.5 - t) * OW * 0.03
             img = view(sh.canvas(f - sf), sh.CW / 2, sh.CH / 2, s, sh.tilt * (1 - 0.3 * t), dx, 0)
             age = f - sf
             flash = 0.12 * math.exp(-age / 1.5) if i >= 4 else 0.0
@@ -440,7 +537,7 @@ def main():
     synth_audio([sf for sf, _ in sched], final_start, wav)
     cmd = ["ffmpeg", "-y", "-loglevel", "error", "-f", "rawvideo", "-pix_fmt", "rgb24", "-s", f"{OW}x{OH}",
            "-r", str(FPS), "-i", "-", "-i", wav, "-c:v", "libx264", "-preset", "medium", "-crf", "20",
-           "-maxrate", "16M", "-bufsize", "32M", "-pix_fmt", "yuv420p", "-c:a", "aac", "-b:a", "192k",
+           "-maxrate", "16M", "-bufsize", "32M", "-pix_fmt", "yuv420p", "-af", "loudnorm=I=-14:TP=-1.5:LRA=11", "-ar", "44100", "-c:a", "aac", "-b:a", "192k",
            "-shortest", "-movflags", "+faststart", out]
     proc = subprocess.Popen(cmd, stdin=subprocess.PIPE)
     for f in range(TOTAL):

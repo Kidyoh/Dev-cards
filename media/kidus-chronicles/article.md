@@ -1,12 +1,12 @@
 # KIDUS'S CHRONICLES
 
-**Learning AI in public, building out loud, and bringing 1,300+ readers along for the ride.**
+**Learning AI in public, building out loud, and bringing a 1,300+ strong family along for the ride.**
 
 *Read all about it on Telegram: [@kiduschronicless](https://t.me/kiduschronicless)*
 
 ---
 
-**ADDIS ABABA —** It started as a place to think out loud. Today, Kidus's Chronicles is home to more than 1,300 readers who come for the builds, stay for the honesty, and often get signed off with a verse and a *"Good night, my beautiful people."*
+**ADDIS ABABA —** It started as a place to think out loud. Today, Kidus's Chronicles is a family of more than 1,300 people who come for the builds and stay for the honesty.
 
 The channel is a running diary of learning Machine Learning and AI, shipping side projects, and sharing what actually works. Recent editions featured an Android app that shows everything about your phone in one place: live charging watts, battery health, screen time and sixteen home-screen widgets. Another featured *Gugut and the Goat*, a game built for the Stark hackathon.
 
@@ -19,7 +19,7 @@ The advice on Kidus's Chronicles is practical, not hype:
 3. **Review in a separate conversation.** Let the AI test the code somewhere fresh so the review isn't biased.
 4. **Test it yourself.** Then ship it, and let real users try it.
 
-ML or AI? *"It depends on your interest,"* goes the answer to one reader. *"Give your time and energy. There is no way you won't succeed."*
+ML or AI? *"It depends on your interest,"* goes the answer to one member of the family. *"Give your time and energy. There is no way you won't succeed."*
 
 ## From shy to community
 
@@ -34,4 +34,4 @@ The door is always open: *"Keep it coming. Comments, suggestions, advice, everyt
 ---
 
 **Learn. Build. Ship. Repeat.**
-Join the chronicles → **@kiduschronicless**
+Join the family → **@kiduschronicless**
