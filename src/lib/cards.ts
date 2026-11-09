@@ -70,7 +70,7 @@ export function onBoard(card: CardData): boolean {
 }
 
 /** Top scanned Ethiopian developers, optionally by main language. Nothing is fetched from GitHub here. */
-export async function getBoard(language?: string, limit = 100): Promise<CardData[]> {
+export async function getBoard(language?: string, limit = 500): Promise<CardData[]> {
   const lang = language ? LANGUAGES.find((l) => l.toLowerCase() === language.toLowerCase()) : undefined;
   if (language && !lang) throw new GitHubError(`Unknown language "${language}"`, 400);
   const db = await getDB();

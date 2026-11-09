@@ -5,7 +5,6 @@ import { useEffect, useState } from "react";
 import { addToBinder, inBinder, removeFromBinder } from "@/lib/binder";
 import { renderCardPng } from "@/lib/cardCanvas";
 import { imageUrl, shareUrl } from "@/lib/api";
-import { fetchRetry } from "@/lib/fetchRetry";
 import type { CardData } from "@/lib/types";
 
 const btn = "border border-blue px-2 py-1 font-mono text-[10.5px] font-semibold uppercase text-blue hover:bg-blue hover:text-white";
@@ -21,10 +20,22 @@ export function CardActions({ card }: { card: CardData }) {
   const [dl, setDl] = useState<"idle" | "busy" | "error">("idle");
   useEffect(() => setSaved(inBinder(login)), [login]);
 
-  // Warm the edge cache for the X preview image so it's ready before anyone shares the link.
+  // Warm the X/Telegram preview image so it's ready before anyone shares the link. A plain image
+  // load (not fetch) needs no CORS; retry a couple of times if the render hits the CPU limit.
   useEffect(() => {
-    const t = setTimeout(() => fetchRetry(imageUrl(login, "og"), 3).catch(() => {}), 1500);
-    return () => clearTimeout(t);
+    let tries = 0;
+    let stop = false;
+    const warm = () => {
+      if (stop || tries++ >= 3) return;
+      const img = new Image();
+      img.onerror = () => setTimeout(warm, 1500 * tries);
+      img.src = `${imageUrl(login, "og")}&w=${tries}`;
+    };
+    const t = setTimeout(warm, 1500);
+    return () => {
+      stop = true;
+      clearTimeout(t);
+    };
   }, [login]);
 
   // The PNG is drawn in the browser (canvas): instant, and no server CPU.

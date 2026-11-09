@@ -3,7 +3,7 @@
 import { AnimatePresence, motion } from "motion/react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { API } from "@/lib/api";
+import { fetchCard } from "@/lib/api";
 import { readBinder, removeFromBinder } from "@/lib/binder";
 import type { CardData } from "@/lib/types";
 import { DevCard } from "./DevCard";
@@ -20,9 +20,8 @@ export function Binder() {
     if (!logins) return;
     for (const l of logins) {
       if (cards[l]) continue;
-      fetch(`${API}/api/card/${encodeURIComponent(l)}`)
-        .then((r) => (r.ok ? r.json() : Promise.reject()))
-        .then((c: CardData) => setCards((m) => ({ ...m, [l]: c })))
+      fetchCard(l)
+        .then((c) => setCards((m) => ({ ...m, [l]: c })))
         .catch(() => setCards((m) => ({ ...m, [l]: "error" })));
     }
   }, [logins]); // eslint-disable-line react-hooks/exhaustive-deps

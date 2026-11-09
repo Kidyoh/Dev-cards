@@ -12,16 +12,25 @@ export class ApiError extends Error {
   }
 }
 
-async function get<T>(path: string): Promise<T> {
-  let res: Response;
-  try {
-    res = await fetch(`${API}${path}`);
-  } catch {
-    throw new ApiError("Couldn't reach Specsheet. Check your connection and try again.", 0);
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+/** GET JSON from the API, retrying network failures and 5xx (the Worker can hit its CPU limit). */
+async function get<T>(path: string, tries = 4): Promise<T> {
+  let last: ApiError = new ApiError("Couldn't reach Specsheet. Check your connection and try again.", 0);
+  for (let i = 0; i < tries; i++) {
+    if (i) await sleep(500 * i);
+    let res: Response;
+    try {
+      res = await fetch(`${API}${path}`);
+    } catch {
+      continue; // network / CORS-less error page: retry
+    }
+    const body = (await res.json().catch(() => ({}))) as T & { error?: string };
+    if (res.ok) return body;
+    last = new ApiError(body.error ?? `Request failed (${res.status})`, res.status);
+    if (res.status < 500) throw last; // 400/404: a real answer, don't retry
   }
-  const body = (await res.json().catch(() => ({}))) as T & { error?: string };
-  if (!res.ok) throw new ApiError(body.error ?? `Request failed (${res.status})`, res.status);
-  return body;
+  throw last;
 }
 
 export const fetchCard = (login: string, rescan = false) =>
