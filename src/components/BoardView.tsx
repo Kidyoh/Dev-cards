@@ -35,14 +35,14 @@ export function BoardView() {
 
   return (
     <section className="px-4 pt-6 sm:px-6">
-      <Label className="text-blue/60">Ranking · Ethiopia 🇪🇹</Label>
+      <Label className="text-blue/60">Board · Ethiopia 🇪🇹</Label>
       <Headline className="mt-2 text-[clamp(44px,6.4vw,92px)]">
-        Ethiopia&apos;s
+        Everyone who
         <br />
-        top developers.
+        got their card.
       </Headline>
       <p className="mt-3 max-w-xl font-mono text-[11px] uppercase leading-relaxed text-blue">
-        Everyone scanned on Specsheet whose GitHub location is in Ethiopia, ranked by card. Scan yourself to join.
+        Get your card and you&apos;re on the board. Cards from developers in Ethiopia, sorted by overall.
       </p>
 
       <div className="mt-8 grid gap-3 border border-blue bg-white p-3 md:grid-cols-[90px_1fr]">
@@ -56,7 +56,7 @@ export function BoardView() {
       </div>
 
       <Headline as="h2" className="mt-12 text-[clamp(28px,3.4vw,44px)]">
-        {active ? `Top ${active} devs` : "Top overall"}
+        {active ? `${active} cards` : "All cards"}
       </Headline>
       {error ? (
         <div className="mt-6 border border-blue bg-white p-3 font-mono text-[12px] text-blue">{error}</div>
@@ -68,7 +68,7 @@ export function BoardView() {
         <div className="mt-6 max-w-md">
           <Win title="Board empty">
             <p className="mb-2 font-mono text-[10.5px] uppercase leading-snug text-blue">
-              {active ? `No ${active} developers on the board yet.` : "Nobody on the board yet."} Be the first: scan yourself.
+              {active ? `No ${active} cards yet.` : "No cards yet."} Get yours and be the first.
             </p>
             <ScanInput />
           </Win>
@@ -76,17 +76,17 @@ export function BoardView() {
       ) : (
         <>
           <p className="mt-2 font-mono text-[10px] uppercase text-blue/70">
-            {cards.length} developer{cards.length === 1 ? "" : "s"} ranked
+            {cards.length} card{cards.length === 1 ? "" : "s"}
           </p>
           <BoardList key={active ?? "all"} cards={cards} />
         </>
       )}
 
       <div className="mt-12 max-w-xl">
-        <Win title="How to get on the board">
+        <Win title="How to join">
           <ol className="space-y-1 font-mono text-[10.5px] uppercase leading-snug text-blue">
             <li>01. Set your GitHub profile location to Ethiopia or your city (Addis Ababa, Adama, Hawassa…)</li>
-            <li>02. Scan your username on Specsheet</li>
+            <li>02. Get your card: enter your GitHub username</li>
             <li>03. Already scanned before? Open your card and hit Rescan</li>
           </ol>
         </Win>

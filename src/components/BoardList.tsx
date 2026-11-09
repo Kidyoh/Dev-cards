@@ -4,33 +4,16 @@ import { AnimatePresence, motion, useMotionValue, useSpring } from "motion/react
 import Link from "next/link";
 import { useState } from "react";
 import type { CardData } from "@/lib/types";
-import { Bracket, Cells, Win } from "./bp";
+import { Bracket, Cells } from "./bp";
 import { DevCard } from "./DevCard";
 
 export function BoardList({ cards }: { cards: CardData[] }) {
   const [hovered, setHovered] = useState<CardData | null>(null);
   const x = useMotionValue(0), y = useMotionValue(0);
   const sx = useSpring(x, { stiffness: 320, damping: 32 }), sy = useSpring(y, { stiffness: 320, damping: 32 });
-  const top = cards.slice(0, 3);
 
   return (
     <div>
-      {top.length === 3 && (
-        <div className="mt-8 grid gap-4 md:grid-cols-3">
-          {top.map((c, i) => (
-            <Win key={c.login} title={`Rank_0${i + 1} · ${c.overall} OVR`} delay={i * 120}>
-              <Link href={`/u/${c.login}`} className="flex justify-center py-2">
-                <DevCard card={c} scale={0.6} flippable={false} slab={false} idle={i === 0} />
-              </Link>
-              <div className="flex justify-between font-mono text-[10px] uppercase text-blue">
-                <span>@{c.login}</span>
-                <span>{c.role.name}</span>
-              </div>
-            </Win>
-          ))}
-        </div>
-      )}
-
       <div
         className="mt-8"
         onPointerMove={(e) => {
@@ -39,7 +22,7 @@ export function BoardList({ cards }: { cards: CardData[] }) {
         }}
         onPointerLeave={() => setHovered(null)}
       >
-        <Bracket>Full lineup · {cards.length} subjects</Bracket>
+        <Bracket>Cards · {cards.length}</Bracket>
         <ol className="mt-2 border border-blue bg-white">
           {cards.map((c, i) => (
             <li key={c.login} onPointerEnter={() => setHovered(c)} className="border-b border-blue/25 last:border-0">
