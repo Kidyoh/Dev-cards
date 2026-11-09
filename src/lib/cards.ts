@@ -63,8 +63,10 @@ export async function getCard(
 import { BOARD_COUNTRY, LANGUAGES } from "./board-config";
 export { BOARD_COUNTRY, LANGUAGES };
 
+/** Everyone who gets a card joins, unless their GitHub location is clearly another country. */
 export function onBoard(card: CardData): boolean {
-  return countryFromLocation(card.location) === BOARD_COUNTRY;
+  const c = countryFromLocation(card.location);
+  return c === BOARD_COUNTRY || c === null;
 }
 
 /** Top scanned Ethiopian developers, optionally by main language. Nothing is fetched from GitHub here. */

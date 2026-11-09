@@ -42,7 +42,7 @@ export function BoardView() {
         got their card.
       </Headline>
       <p className="mt-3 max-w-xl font-mono text-[11px] uppercase leading-relaxed text-blue">
-        Get your card and you&apos;re on the board. Cards from developers in Ethiopia, sorted by overall.
+        Get your card and you&apos;re on the board, sorted by overall. No location needed on GitHub.
       </p>
 
       <div className="mt-8 grid gap-3 border border-blue bg-white p-3 md:grid-cols-[90px_1fr]">
@@ -85,9 +85,8 @@ export function BoardView() {
       <div className="mt-12 max-w-xl">
         <Win title="How to join">
           <ol className="space-y-1 font-mono text-[10.5px] uppercase leading-snug text-blue">
-            <li>01. Set your GitHub profile location to Ethiopia or your city (Addis Ababa, Adama, Hawassa…)</li>
-            <li>02. Get your card: enter your GitHub username</li>
-            <li>03. Already scanned before? Open your card and hit Rescan</li>
+            <li>01. Enter your GitHub username on the home page</li>
+            <li>02. Get your card. That&apos;s it, you&apos;re on the board</li>
           </ol>
         </Win>
       </div>

@@ -63,7 +63,8 @@ export async function topCards(db: D1Like, filter: { country?: string; language?
   const conds: string[] = [];
   const args: unknown[] = [];
   if (filter.country) {
-    conds.push("country = ?");
+    // People with no (recognisable) location still count: only an explicit other country is left out.
+    conds.push("(country = ? OR country IS NULL)");
     args.push(filter.country);
   }
   if (filter.language) {
@@ -78,12 +79,13 @@ export async function topCards(db: D1Like, filter: { country?: string; language?
   return results.map((r) => JSON.parse(r.data) as CardData);
 }
 
-/** 1-based rank on a country board (ties share a rank), or null if not on it. */
+/** 1-based rank on the board (ties share a rank), or null if not on it. */
 export async function rankOf(db: D1Like, login: string, country: string): Promise<{ rank: number; total: number } | null> {
-  const me = await db.prepare("SELECT overall FROM cards WHERE login = ? AND country = ?").bind(login.toLowerCase(), country).first<{ overall: number }>();
+  const onBoard = "(country = ? OR country IS NULL)";
+  const me = await db.prepare(`SELECT overall FROM cards WHERE login = ? AND ${onBoard}`).bind(login.toLowerCase(), country).first<{ overall: number }>();
   if (!me) return null;
-  const above = await db.prepare("SELECT COUNT(*) AS n FROM cards WHERE country = ? AND overall > ?").bind(country, me.overall).first<{ n: number }>();
-  const total = await db.prepare("SELECT COUNT(*) AS n FROM cards WHERE country = ?").bind(country).first<{ n: number }>();
+  const above = await db.prepare(`SELECT COUNT(*) AS n FROM cards WHERE ${onBoard} AND overall > ?`).bind(country, me.overall).first<{ n: number }>();
+  const total = await db.prepare(`SELECT COUNT(*) AS n FROM cards WHERE ${onBoard}`).bind(country).first<{ n: number }>();
   return { rank: (above?.n ?? 0) + 1, total: total?.n ?? 0 };
 }
 

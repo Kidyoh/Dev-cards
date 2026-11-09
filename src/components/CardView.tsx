@@ -147,8 +147,9 @@ export function CardView() {
               </div>
             ) : (
               <div className="font-mono text-[10.5px] uppercase leading-snug text-blue">
-                Not on the board. Set your GitHub location to Ethiopia or your city, then{" "}
-                <button onClick={onRescan} className="underline underline-offset-2">rescan</button>.
+                Not on the board: this board is for Ethiopia and your GitHub location is set to another country.
+                Changed it?{" "}
+                <button onClick={onRescan} className="underline underline-offset-2">Rescan</button>.
               </div>
             )}
           </Win>
